@@ -1,1 +1,4 @@
-./venv/
+./.venv/
+./config.ini
+./my_telegram_session.session
+.env
