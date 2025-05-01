@@ -1,38 +1,60 @@
-version: '3.8' # Указываем версию Docker Compose
+version: '3.8'
 
 services:
   # Сервис базы данных PostgreSQL
-  postgres-db:
-    image: postgres:15 # Используем официальный образ PostgreSQL версии 15
-    container_name: postgres-db # Имя контейнера для удобства
+  postgres_db: # Переименован для ясности и соответствия DB_HOST
+    image: postgres:15
+    container_name: postgres_db_service
     environment:
-      # Эти переменные используются образом postgres для инициализации БД при первом запуске
-      POSTGRES_USER: ${DB_USER} # Берем значения из .env файла
-      POSTGRES_PASSWORD: ${DB_PASSWORD} # Берем значения из .env файла
-      POSTGRES_DB: ${DB_NAME} # Берем значения из .env файла
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - postgres-data:/var/lib/postgresql/data # Монтируем именованный том для хранения данных БД
+      - postgres_data:/var/lib/postgresql/data
+      # Если нужно, можно монтировать SQL для инициализации (но мы делаем это в коде)
+      # - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - "5433:5432" # Пробрасываем порт БД на хост (5433 на хосте -> 5432 в контейнере)
-                    # Используем 5433, чтобы не конфликтовать с локальным Postgres, если он есть
-                    # Это нужно в основном для отладки (подключение извне)
-    restart: unless-stopped # Перезапускать контейнер, если он остановился (кроме ручной остановки)
+      # Используем ${DB_PORT} из .env для хост-порта, 5432 для порта контейнера
+      - "${DB_PORT}:5432"
+    networks:
+      - app-network # Добавлено для явного указания сети
+    restart: unless-stopped
 
   # Сервис для запуска Python-скрипта парсера
-  telegram-parser:
-    build: . # Собираем образ из Dockerfile в текущей директории (.)
-    container_name: telegram-parser
+  parser: # Переименован для краткости
+    build:
+      context: ./parser # <-- Указываем папку парсера
+      dockerfile: Dockerfile
+    container_name: parser_service
     env_file:
-      - .env # Загружаем все переменные из .env файла в окружение этого контейнера
+      - .env
     depends_on:
-      - postgres-db # Запускать этот сервис ТОЛЬКО ПОСЛЕ того, как запустится сервис postgres-db
-                    # Внимание: это не гарантирует, что БД ПОЛНОСТЬЮ готова принимать соединения!
+      - postgres_db # Зависит от БД
     volumes:
-      # Монтируем локальную папку ./session в папку /app/session внутри контейнера
-      # Это позволяет скрипту читать/писать файл сессии Telegram (.session)
+      # Путь внутри контейнера (/app/session) должен совпадать с тем, что ожидает скрипт парсера
       - ./session:/app/session
-    restart: no # Не перезапускать автоматически (скрипт должен выполниться один раз и завершиться)
+    networks:
+      - app-network # Добавлено для явного указания сети
+    restart: no # Обычно парсер запускается по расписанию или вручную
+
+  # Сервис для запуска Python-скрипта суммаризатора
+  summarizer:
+    build:
+      context: ./summarizer # <-- Указываем папку суммаризатора
+      dockerfile: Dockerfile
+    container_name: summarizer_service
+    env_file:
+      - .env
+    depends_on:
+      - postgres_db
+      - parser
+    networks:
+      - app-network # Добавлено для явного указания сети
+    restart: no # Запускается по необходимости (пока вручную или позже через Airflow)
 
 volumes:
-  # Определяем именованный том для данных PostgreSQL
-  postgres-data:
+  postgres_data:
+
+networks:
+  app-network: # Определяем сеть
+    driver: bridge
