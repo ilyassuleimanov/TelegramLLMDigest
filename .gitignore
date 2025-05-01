@@ -1,6 +1,6 @@
 .venv/
 config.ini
-my_telegram_session.session
+session/my_telegram_session.session
 .env
 Notes.txt
 delete/
