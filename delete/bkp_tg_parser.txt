@@ -1,0 +1,178 @@
+import configparser # Для чтения api_id/api_hash из файла (безопаснее)
+import asyncio
+from telethon import TelegramClient
+from telethon.errors import SessionPasswordNeededError
+from telethon.errors.rpcerrorlist import UsernameNotOccupiedError, ChannelPrivateError
+from urllib.parse import urlparse
+
+# --- НАСТРОЙКИ ---
+# Лучше вынести api_id и api_hash в отдельный файл config.ini
+# Создайте файл 'config.ini' рядом со скриптом:
+# [Telegram]
+# api_id = ВАШ_API_ID
+# api_hash = ВАШ_API_HASH
+# phone = ВАШ_НОМЕР_ТЕЛЕФОНА_С_+
+
+CONFIG_FILE = 'config.ini'
+SESSION_NAME = 'my_telegram_session' # Имя файла сессии
+
+# Количество сообщений для парсинга (None - все доступные, но будьте осторожны с большими каналами)
+MESSAGE_LIMIT = 100
+# --- КОНЕЦ НАСТРОЕК ---
+
+def get_channel_username(link):
+    """Извлекает username или joinchat хэш из ссылки"""
+    parsed = urlparse(link)
+    path = parsed.path.strip('/')
+    # Обработка ссылок вида t.me/username и t.me/joinchat/HASH
+    if path.startswith('joinchat/'):
+        return link # Telethon может работать с invite-ссылками напрямую
+    else:
+        # Предполагаем, что последняя часть пути - это username
+        return path.split('/')[-1]
+
+async def parse_channel(client, channel_entity, limit=10):
+    """Парсит сообщения из указанного канала"""
+    print(f"[*] Начинаю парсинг канала: {channel_entity}")
+    messages_data = []
+    try:
+        # Получаем информацию о канале (не обязательно, но полезно для проверки)
+        entity = await client.get_entity(channel_entity)
+        print(f"[*] Канал найден: {entity.title}")
+
+        # Используем iter_messages для эффективной работы с большим количеством сообщений
+        # Если limit=None, он будет пытаться получить всю историю (может быть долго и ресурсоемко)
+        async for message in client.iter_messages(entity, limit=limit):
+            # print(f"Debug: Message ID {message.id}, Type: {type(message)}") # Отладочная информация
+            message_info = {
+                'id': message.id,
+                'date': message.date.isoformat(),
+                'text': message.text or "", # Текст сообщения (если есть)
+                'sender_id': message.sender_id,
+                'views': message.views if hasattr(message, 'views') else None,
+                'forwards': message.forwards if hasattr(message, 'forwards') else None,
+                'is_reply': message.is_reply,
+                'reply_to_msg_id': message.reply_to_msg_id if message.is_reply else None,
+                # Можно добавить обработку медиа (фото, видео, документы и т.д.)
+                'has_media': message.media is not None,
+                # 'media_type': type(message.media).__name__ if message.media else None # Пример типа медиа
+            }
+            messages_data.append(message_info)
+            # Опционально: выводим информацию по мере поступления
+            # print(f"--- Message ID: {message_info['id']} ---")
+            # print(f"Date: {message_info['date']}")
+            # print(f"Text: {message_info['text'][:100]}...") # Первые 100 символов
+            # print("-" * 20)
+
+        print(f"[*] Парсинг завершен. Получено сообщений: {len(messages_data)}")
+        return messages_data
+
+    except UsernameNotOccupiedError:
+        print(f"[!] Ошибка: Канал/пользователь с username '{channel_entity}' не найден.")
+    except ChannelPrivateError:
+         print(f"[!] Ошибка: Канал '{channel_entity}' является приватным или у вас нет доступа.")
+    except ValueError as e:
+         # Может возникнуть, если ссылка не может быть распознана как entity
+         print(f"[!] Ошибка: Не удалось распознать ссылку или username '{channel_entity}'. Убедитесь, что ссылка верна. {e}")
+    except Exception as e:
+        print(f"[!] Произошла непредвиденная ошибка: {e}")
+        # print(f"Тип ошибки: {type(e)}") # Отладка
+    return None
+
+
+async def main():
+    # Читаем учетные данные из файла
+    config = configparser.ConfigParser()
+    if not config.read(CONFIG_FILE):
+        print(f"Ошибка: Не найден файл конфигурации {CONFIG_FILE}")
+        print("Пожалуйста, создайте его со следующим содержанием:")
+        print("""
+[Telegram]
+api_id = ВАШ_API_ID
+api_hash = ВАШ_API_HASH
+phone = ВАШ_НОМЕР_ТЕЛЕФОНА_С_+
+        """)
+        return
+
+    try:
+        api_id = int(config['Telegram']['api_id'])
+        api_hash = config['Telegram']['api_hash']
+        phone = config['Telegram']['phone']
+    except (KeyError, ValueError):
+        print(f"Ошибка: Неверный формат файла {CONFIG_FILE}. Убедитесь, что api_id, api_hash и phone указаны корректно.")
+        return
+
+    # Создаем клиент
+    client = TelegramClient(SESSION_NAME, api_id, api_hash, system_version="4.16.30-vxCUSTOM")
+
+    # Запускаем клиент
+    print("[*] Подключаюсь к Telegram...")
+    await client.connect()
+
+    # Проверяем, авторизованы ли мы
+    if not await client.is_user_authorized():
+        print("[*] Требуется авторизация.")
+        try:
+            await client.send_code_request(phone)
+            code = input('[*] Пожалуйста, введите код подтверждения из Telegram: ')
+            await client.sign_in(phone, code)
+        except SessionPasswordNeededError:
+            password = input('[*] Требуется пароль двухфакторной аутентификации: ')
+            await client.sign_in(password=password)
+        except Exception as e:
+            print(f"[!] Ошибка авторизации: {e}")
+            await client.disconnect()
+            return
+        print("[*] Авторизация прошла успешно!")
+    else:
+        print("[*] Успешно подключен (используется существующая сессия).")
+
+    # Основной цикл работы
+    while True:
+        channel_link = input("\nВведите ссылку на Telegram канал (например, https://t.me/durov) или 'q' для выхода: ")
+        if channel_link.lower() == 'q':
+            break
+
+        channel_entity = get_channel_username(channel_link)
+        if not channel_entity:
+            print("[!] Некорректная ссылка. Попробуйте снова.")
+            continue
+
+        # Используем async with client для гарантии отключения
+        async with client:
+            parsed_messages = await parse_channel(client, channel_entity, limit=MESSAGE_LIMIT)
+
+            if parsed_messages:
+                # Здесь можно делать что угодно с полученными данными:
+                # - Сохранить в файл (JSON, CSV)
+                # - Записать в базу данных
+                # - Просто вывести часть информации
+                print("\n--- Пример первых 5 полученных сообщений ---")
+                for i, msg in enumerate(parsed_messages[:5]):
+                    print(f"\nСообщение #{i+1} (ID: {msg['id']})")
+                    print(f"  Дата: {msg['date']}")
+                    print(f"  Просмотры: {msg['views']}")
+                    print(f"  Текст: {msg['text'][:200]}...") # Первые 200 символов
+                print("-" * 30)
+                print(f"Всего получено и обработано: {len(parsed_messages)} сообщений.")
+                # Например, сохранение в JSON:
+                # import json
+                # try:
+                #     filename = f"{channel_entity}_messages.json"
+                #     with open(filename, 'w', encoding='utf-8') as f:
+                #         json.dump(parsed_messages, f, ensure_ascii=False, indent=4)
+                #     print(f"[*] Данные сохранены в файл: {filename}")
+                # except Exception as e:
+                #     print(f"[!] Ошибка при сохранении в JSON: {e}")
+
+
+    print("[*] Отключаюсь от Telegram.")
+    # await client.disconnect() # Не нужно, если используется async with client
+
+
+if __name__ == "__main__":
+    # Используем asyncio.run() для запуска асинхронной функции main
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n[*] Выход по требованию пользователя (Ctrl+C)")
