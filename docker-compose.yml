@@ -1,60 +1,136 @@
-version: '3.8'
+version: '3.8' 
 
 services:
-  # Сервис базы данных PostgreSQL
-  postgres_db: # Переименован для ясности и соответствия DB_HOST
+  # Сервис базы данных PostgreSQL для РЕЗУЛЬТАТОВ (остается из твоей предыдущей версии)
+  postgres_db: # Это БД для твоих постов и саммари
     image: postgres:15
-    container_name: postgres_db_service
+    container_name: postgres_results_db_service # Переименовал для ясности
     environment:
-      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_DB: ${DB_NAME} # Использует переменные для основной БД
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      # Если нужно, можно монтировать SQL для инициализации (но мы делаем это в коде)
-      # - ./database/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_results_data:/var/lib/postgresql/data # Отдельный том для данных результатов
     ports:
-      # Используем ${DB_PORT} из .env для хост-порта, 5432 для порта контейнера
-      - "${DB_PORT}:5432"
+      - "${DB_PORT}:5432" # Например, 5433:5432
     networks:
-      - app-network # Добавлено для явного указания сети
+      - app-network
     restart: unless-stopped
 
-  # Сервис для запуска Python-скрипта парсера
-  parser: # Переименован для краткости
+  # === Сервисы Apache Airflow ===
+
+  # База данных PostgreSQL для МЕТАДАННЫХ Airflow
+  postgres_airflow_db:
+    image: postgres:15
+    container_name: postgres_airflow_db_service
+    environment:
+      POSTGRES_DB: ${AIRFLOW_DB_NAME}
+      POSTGRES_USER: ${AIRFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
+    volumes:
+      - postgres_airflow_data:/var/lib/postgresql/data # Отдельный том для метаданных Airflow
+    ports:
+      - "5434:5432" # Другой порт на хосте, чтобы не конфликтовать, если нужен доступ
+    networks:
+      - app-network
+    healthcheck: # Проверка готовности БД
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_DB_USER} -d ${AIRFLOW_DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Airflow Scheduler - планировщик задач
+  airflow-scheduler:
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG:-2.8.1} # Используй актуальную версию
+    container_name: airflow_scheduler_service
+    depends_on:
+      postgres_airflow_db: # Ждет, пока БД Airflow будет готова
+        condition: service_healthy
+    env_file:
+      - .env # Загружает все переменные, включая AIRFLOW__*
+    user: "${AIRFLOW_UID}:0" # Запуск от имени пользователя с UID из .env, группа root
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/config:/opt/airflow/config # Если будешь кастомизировать airflow.cfg
+      # Если для задач Airflow (запускаемых НЕ через DockerOperator) нужны какие-то файлы сессий:
+      # - ./session:/opt/airflow/session # Это понадобится, если бы задачи выполнялись в этом контейнере
+    command: scheduler # Команда для запуска планировщика
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname)"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # Airflow Webserver - веб-интерфейс
+  airflow-webserver:
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG:-2.8.1}
+    container_name: airflow_webserver_service
+    depends_on:
+      airflow-scheduler: # Ждет, пока планировщик будет здоров
+        condition: service_healthy
+    env_file:
+      - .env
+    user: "${AIRFLOW_UID}:0"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/logs:/opt/airflow/logs
+      - ./airflow/plugins:/opt/airflow/plugins
+      - ./airflow/config:/opt/airflow/config
+    ports:
+      - "8080:8080" # Порт для доступа к UI Airflow
+    command: webserver # Команда для запуска веб-сервера
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  # === Твои существующие сервисы (остаются для независимого запуска, пока не интегрированы в Airflow DAG) ===
+  parser:
     build:
-      context: ./parser # <-- Указываем папку парсера
+      context: ./parser
       dockerfile: Dockerfile
     container_name: parser_service
     env_file:
       - .env
     depends_on:
-      - postgres_db # Зависит от БД
+      # Зависит от БД результатов, не от БД Airflow
+      postgres_db:
+        condition: service_started # Можно сделать healthcheck и для этой БД
     volumes:
-      # Путь внутри контейнера (/app/session) должен совпадать с тем, что ожидает скрипт парсера
       - ./session:/app/session
     networks:
-      - app-network # Добавлено для явного указания сети
-    restart: no # Обычно парсер запускается по расписанию или вручную
+      - app-network
+    restart: no
 
-  # Сервис для запуска Python-скрипта суммаризатора
   summarizer:
     build:
-      context: ./summarizer # <-- Указываем папку суммаризатора
+      context: ./summarizer
       dockerfile: Dockerfile
     container_name: summarizer_service
     env_file:
       - .env
     depends_on:
-      - postgres_db
-      - parser
+      postgres_db:
+        condition: service_started
+      # parser: # Закомментировано, т.к. порядок будет рулить Airflow или ручной запуск
     networks:
-      - app-network # Добавлено для явного указания сети
-    restart: no # Запускается по необходимости (пока вручную или позже через Airflow)
+      - app-network
+    restart: no
 
 volumes:
-  postgres_data:
+  postgres_results_data: # Том для данных основной БД
+  postgres_airflow_data: # Том для метаданных Airflow
 
 networks:
-  app-network: # Определяем сеть
+  app-network:
     driver: bridge
