@@ -1,3 +1,5 @@
+# airflow/tasks/parser/Dockerfile
+
 # 1. Выбираем базовый образ с Python нужной версии
 FROM python:3.9-slim
 
@@ -5,22 +7,25 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # 3. Копируем файл с зависимостями в рабочую директорию
+# Предполагается, что requirements.txt лежит в airflow/tasks/parser/
 COPY requirements.txt .
 
 # 4. Устанавливаем зависимости Python
-# --no-cache-dir экономит место в образе
-# --trusted-host pypi.python.org --trusted-host pypi.org --trusted-host files.pythonhosted.org - могут понадобиться, если есть проблемы с доступом к PyPI из-за сети/SSL
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
-# 5. Копируем остальной код приложения (скрипт) в рабочую директорию
-COPY tg_parser.py .
+# 5. Копируем адаптированный скрипт парсера
+# Предполагается, что telegram_parser.py лежит в airflow/tasks/parser/
+COPY telegram_parser.py .
 
-# 6. Создаем директорию для сессии внутри контейнера (если нужна)
-# Убедимся, что она существует и у Python есть права на запись
-RUN mkdir -p /app/session && chown -R nobody:nogroup /app/session
+# 6. (Опционально) Создаем директорию для сессии внутри образа,
+# если скрипт ожидает ее существования даже без монтирования тома.
+# Права на эту папку будут переопределены при монтировании тома из DockerOperator.
+RUN mkdir -p /app/session
 
-# Запускаем от имени непривилегированного пользователя для безопасности
-USER nobody
+# USER nobody -- УБРАТЬ. Пусть запускается от пользователя по умолчанию в образе (обычно root)
+#             или того, которого может передать DockerOperator/Airflow.
+#             Это упростит работу с томами и правами.
 
-# 7. Указываем команду, которая будет выполняться при запуске контейнера
-CMD ["python", "tg_parser.py"]
+# CMD ["python", "telegram_parser.py"] -- УБРАТЬ или ЗАКОММЕНТИРОВАТЬ.
+#                                      Команду задает DockerOperator.

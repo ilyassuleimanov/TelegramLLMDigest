@@ -1,0 +1,18 @@
+[2025-05-15T15:03:03.455+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts scheduled__2025-05-15T14:30:00+00:00 [queued]>
+[2025-05-15T15:03:03.462+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts scheduled__2025-05-15T14:30:00+00:00 [queued]>
+[2025-05-15T15:03:03.463+0000] {taskinstance.py:2170} INFO - Starting attempt 2 of 2
+[2025-05-15T15:03:03.474+0000] {taskinstance.py:2191} INFO - Executing <Task(DockerOperator): parse_channel_posts> on 2025-05-15 14:30:00+00:00
+[2025-05-15T15:03:03.483+0000] {standard_task_runner.py:60} INFO - Started process 204 to run task
+[2025-05-15T15:03:03.486+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'telegram_summary_channel_1137503644', 'parse_channel_posts', 'scheduled__2025-05-15T14:30:00+00:00', '--job-id', '135', '--raw', '--subdir', 'DAGS_FOLDER/dag_generator.py', '--cfg-path', '/tmp/tmpu1jw7bf9']
+[2025-05-15T15:03:03.488+0000] {standard_task_runner.py:88} INFO - Job 135: Subtask parse_channel_posts
+[2025-05-15T15:03:03.505+0000] {logging_mixin.py:188} WARNING - /home/airflow/.local/lib/python3.8/site-packages/airflow/settings.py:194 DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+[2025-05-15T15:03:03.539+0000] {task_command.py:423} INFO - Running <TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts scheduled__2025-05-15T14:30:00+00:00 [running]> on host 03d8d808f3f4
+[2025-05-15T15:03:03.609+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='telegram_summary_channel_1137503644' AIRFLOW_CTX_TASK_ID='parse_channel_posts' AIRFLOW_CTX_EXECUTION_DATE='2025-05-15T14:30:00+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-05-15T14:30:00+00:00'
+[2025-05-15T15:03:03.682+0000] {docker.py:359} INFO - Starting docker container from image telegram_parser_task:latest
+[2025-05-15T15:03:04.484+0000] {docker.py:429} INFO - [2025-05-15 15:03:04] [INFO] [Parser] - Запуск основного асинхронного процесса парсера...
+[2025-05-15T15:03:04.486+0000] {docker.py:429} INFO - [2025-05-15 15:03:04] [INFO] [Parser] - Попытка подключения к БД (1/5): host=postgres_db dbname=parsing_results user=parser_user
+[2025-05-15T15:03:08.470+0000] {local_task_job_runner.py:121} ERROR - Received SIGTERM. Terminating subprocesses
+[2025-05-15T15:03:08.473+0000] {process_utils.py:131} INFO - Sending 15 to group 204. PIDs of all processes in the group: [204]
+[2025-05-15T15:03:08.473+0000] {process_utils.py:86} INFO - Sending the signal 15 to group 204
+[2025-05-15T15:03:08.473+0000] {taskinstance.py:2450} ERROR - Received SIGTERM. Terminating subprocesses.
+[2025-05-15T15:03:08.473+0000] {docker.py:521} INFO - Stopping docker container

@@ -1,0 +1,27 @@
+[2025-05-15T14:14:53.682+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: telegram_summary_channel_1598472442.parse_channel_posts scheduled__2025-05-15T08:30:00+00:00 [queued]>
+[2025-05-15T14:14:53.689+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: telegram_summary_channel_1598472442.parse_channel_posts scheduled__2025-05-15T08:30:00+00:00 [queued]>
+[2025-05-15T14:14:53.690+0000] {taskinstance.py:2170} INFO - Starting attempt 2 of 2
+[2025-05-15T14:14:53.699+0000] {taskinstance.py:2191} INFO - Executing <Task(DockerOperator): parse_channel_posts> on 2025-05-15 08:30:00+00:00
+[2025-05-15T14:14:53.705+0000] {standard_task_runner.py:60} INFO - Started process 265 to run task
+[2025-05-15T14:14:53.712+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'telegram_summary_channel_1598472442', 'parse_channel_posts', 'scheduled__2025-05-15T08:30:00+00:00', '--job-id', '120', '--raw', '--subdir', 'DAGS_FOLDER/dag_generator.py', '--cfg-path', '/tmp/tmp3md5jxg_']
+[2025-05-15T14:14:53.715+0000] {standard_task_runner.py:88} INFO - Job 120: Subtask parse_channel_posts
+[2025-05-15T14:14:53.738+0000] {logging_mixin.py:188} WARNING - /home/airflow/.local/lib/python3.8/site-packages/airflow/settings.py:194 DeprecationWarning: The sql_alchemy_conn option in [core] has been moved to the sql_alchemy_conn option in [database] - the old setting has been used, but please update your config.
+[2025-05-15T14:14:53.781+0000] {task_command.py:423} INFO - Running <TaskInstance: telegram_summary_channel_1598472442.parse_channel_posts scheduled__2025-05-15T08:30:00+00:00 [running]> on host 0cf936fb69ad
+[2025-05-15T14:14:53.854+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='telegram_summary_channel_1598472442' AIRFLOW_CTX_TASK_ID='parse_channel_posts' AIRFLOW_CTX_EXECUTION_DATE='2025-05-15T08:30:00+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-05-15T08:30:00+00:00'
+[2025-05-15T14:14:53.943+0000] {docker.py:359} INFO - Starting docker container from image telegram_parser_task:latest
+[2025-05-15T14:14:54.306+0000] {docker.py:429} INFO - python: can't open file '/app/telegram_parser.py': [Errno 2] No such file or directory
+[2025-05-15T14:14:54.667+0000] {taskinstance.py:2698} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+    result = execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/providers/docker/operators/docker.py", line 502, in execute
+    return self._run_image()
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/providers/docker/operators/docker.py", line 376, in _run_image
+    return self._run_image_with_mounts(self.mounts, add_tmp_variable=False)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/providers/docker/operators/docker.py", line 437, in _run_image_with_mounts
+    raise DockerContainerFailedException(f"Docker container failed: {result!r}", logs=log_lines)
+airflow.providers.docker.exceptions.DockerContainerFailedException: Docker container failed: {'StatusCode': 2}
+[2025-05-15T14:14:54.670+0000] {taskinstance.py:1138} INFO - Marking task as FAILED. dag_id=telegram_summary_channel_1598472442, task_id=parse_channel_posts, execution_date=20250515T083000, start_date=20250515T141453, end_date=20250515T141454
+[2025-05-15T14:14:54.688+0000] {standard_task_runner.py:107} ERROR - Failed to execute job 120 for task parse_channel_posts (Docker container failed: {'StatusCode': 2}; 265)
+[2025-05-15T14:14:54.730+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 1
+[2025-05-15T14:14:54.948+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

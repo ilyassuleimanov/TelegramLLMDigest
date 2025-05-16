@@ -1,0 +1,42 @@
+[2025-05-16T20:42:03.774+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts manual__2025-05-16T20:42:02.244860+00:00 [queued]>
+[2025-05-16T20:42:03.787+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts manual__2025-05-16T20:42:02.244860+00:00 [queued]>
+[2025-05-16T20:42:03.787+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 2
+[2025-05-16T20:42:03.808+0000] {taskinstance.py:2191} INFO - Executing <Task(DockerOperator): parse_channel_posts> on 2025-05-16 20:42:02.244860+00:00
+[2025-05-16T20:42:03.820+0000] {standard_task_runner.py:60} INFO - Started process 243 to run task
+[2025-05-16T20:42:03.825+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'telegram_summary_channel_1137503644', 'parse_channel_posts', 'manual__2025-05-16T20:42:02.244860+00:00', '--job-id', '9', '--raw', '--subdir', 'DAGS_FOLDER/dag_generator.py', '--cfg-path', '/tmp/tmpbrtwz14b']
+[2025-05-16T20:42:03.829+0000] {standard_task_runner.py:88} INFO - Job 9: Subtask parse_channel_posts
+[2025-05-16T20:42:03.922+0000] {task_command.py:423} INFO - Running <TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts manual__2025-05-16T20:42:02.244860+00:00 [running]> on host aae4240d60de
+[2025-05-16T20:42:04.047+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='telegram_summary_channel_1137503644' AIRFLOW_CTX_TASK_ID='parse_channel_posts' AIRFLOW_CTX_EXECUTION_DATE='2025-05-16T20:42:02.244860+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-05-16T20:42:02.244860+00:00'
+[2025-05-16T20:42:04.157+0000] {docker.py:359} INFO - Starting docker container from image telegram_parser_task:latest
+[2025-05-16T20:42:04.954+0000] {docker.py:429} INFO - [2025-05-16 20:42:04] [INFO] [Parser] - Запуск основного асинхронного процесса парсера...
+[2025-05-16T20:42:04.955+0000] {docker.py:429} INFO - [2025-05-16 20:42:04] [INFO] [Parser] - Попытка подключения к БД (1/5): host=postgres_results_db_service dbname=parsing_results user=parser_user
+[2025-05-16T20:42:04.982+0000] {docker.py:429} INFO - [2025-05-16 20:42:04] [INFO] [Parser] - Успешное подключение к БД!
+[2025-05-16T20:42:04.983+0000] {docker.py:429} INFO - [2025-05-16 20:42:04] [INFO] [Parser] - Проверка/создание таблицы 'telegram_messages'...
+[2025-05-16T20:42:05.034+0000] {docker.py:429} INFO - [2025-05-16 20:42:05] [ERROR] [Parser] - Ошибка при настройке схемы БД 'telegram_messages': column "channel_id_ref" does not exist
+[2025-05-16T20:42:05.036+0000] {docker.py:429} INFO - [2025-05-16 20:42:05] [ERROR] [Parser] - Критическая ошибка в main: Не удалось настроить схему БД.
+Traceback (most recent call last):
+  File "/app/telegram_parser.py", line 478, in main
+    raise Exception("Не удалось настроить схему БД.")
+Exception: Не удалось настроить схему БД.
+[2025-05-16 20:42:05] [INFO] [Parser] - Запись данных XCom в файл: /airflow/xcom/return.json
+[2025-05-16T20:42:05.036+0000] {docker.py:429} INFO - [2025-05-16 20:42:05] [INFO] [Parser] - Данные XCom успешно записаны: {'channel_id': '1137503644', 'target_date_str': '2025-05-16', 'status': 'failure', 'error': 'Не удалось настроить схему БД.'}
+[2025-05-16 20:42:05] [INFO] [Parser] - Закрытие соединения с БД...
+[2025-05-16T20:42:05.037+0000] {docker.py:429} INFO - [2025-05-16 20:42:05] [INFO] [Parser] - Соединение с БД закрыто.
+[2025-05-16 20:42:05] [INFO] [Parser] - --- Скрипт парсера завершен с кодом выхода: 1 ---
+[2025-05-16 20:42:05] [INFO] [Parser] - Завершение работы по SystemExit с кодом 1.
+[2025-05-16 20:42:05] [INFO] [Parser] - Скрипт парсера окончательно завершается с кодом 1.
+[2025-05-16T20:42:05.384+0000] {taskinstance.py:2698} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/models/taskinstance.py", line 433, in _execute_task
+    result = execute_callable(context=context, **execute_callable_kwargs)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/providers/docker/operators/docker.py", line 502, in execute
+    return self._run_image()
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/providers/docker/operators/docker.py", line 376, in _run_image
+    return self._run_image_with_mounts(self.mounts, add_tmp_variable=False)
+  File "/home/airflow/.local/lib/python3.8/site-packages/airflow/providers/docker/operators/docker.py", line 437, in _run_image_with_mounts
+    raise DockerContainerFailedException(f"Docker container failed: {result!r}", logs=log_lines)
+airflow.providers.docker.exceptions.DockerContainerFailedException: Docker container failed: {'StatusCode': 1}
+[2025-05-16T20:42:05.394+0000] {taskinstance.py:1138} INFO - Marking task as UP_FOR_RETRY. dag_id=telegram_summary_channel_1137503644, task_id=parse_channel_posts, execution_date=20250516T204202, start_date=20250516T204203, end_date=20250516T204205
+[2025-05-16T20:42:05.420+0000] {standard_task_runner.py:107} ERROR - Failed to execute job 9 for task parse_channel_posts (Docker container failed: {'StatusCode': 1}; 243)
+[2025-05-16T20:42:05.453+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 1
+[2025-05-16T20:42:05.491+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

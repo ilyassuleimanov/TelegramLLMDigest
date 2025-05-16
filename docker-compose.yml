@@ -2,7 +2,7 @@ version: '3.8' # Эта строка опциональна для соврем�
 
 services:
   # --- База Данных для Результатов Работы Пайплайна ---
-  postgres_results_db_service: # Переименовали из postgres_db для ясности
+  postgres_results_db_service: 
     image: postgres:15
     container_name: postgres_results_db_service
     environment:
@@ -12,7 +12,7 @@ services:
     volumes:
       - postgres_results_data:/var/lib/postgresql/data
     ports:
-      - "${DB_PORT_RESULTS:-5433}:5432" # Используем DB_PORT_RESULTS из .env или 5433 по умолчанию
+      - "${DB_PORT_RESULTS_ON_HOST}:5432" 
     networks:
       - app-network
     healthcheck: # Добавляем healthcheck
@@ -35,7 +35,7 @@ services:
     volumes:
       - postgres_airflow_data:/var/lib/postgresql/data
     ports:
-      - "${AIRFLOW_DB_PORT_ON_HOST:-5434}:5432" # Порт для Airflow БД, если нужен внешний доступ
+      - "${AIRFLOW_DB_PORT_ON_HOST}:5432" # Порт для Airflow БД, если нужен внешний доступ
     networks:
       - app-network
     healthcheck:
@@ -49,7 +49,7 @@ services:
   # Этот сервис выполняет 'airflow db migrate' и 'airflow users create'
   # Он должен запускаться ПЕРЕД scheduler и webserver
   airflow-init:
-    image: apache/airflow:${AIRFLOW_IMAGE_TAG:-2.8.4} # Используй актуальную версию
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG} # Используй актуальную версию
     container_name: airflow_init_service
     depends_on:
       postgres_airflow_db:
@@ -87,7 +87,7 @@ services:
 
   # --- Airflow Scheduler ---
   airflow-scheduler:
-    image: apache/airflow:${AIRFLOW_IMAGE_TAG:-2.8.4} # Убедись, что версия та же, что и у init/webserver
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG} # Убедись, что версия та же, что и у init/webserver
     container_name: airflow_scheduler_service
     depends_on:
       airflow-init: # Ждет завершения инициализации
@@ -96,7 +96,7 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    user: "${AIRFLOW_UID:-50000}:0" # UID:GID, GID 0 = root
+    user: "${AIRFLOW_UID}:0" # UID:GID, GID 0 = root
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
@@ -109,21 +109,21 @@ services:
       - app-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --hostname $(hostname) --local"]
+      test: ["CMD-SHELL", "airflow jobs check --job-type SchedulerJob --local"]
       interval: 30s
       timeout: 30s
       retries: 5
 
   # --- Airflow Webserver ---
   airflow-webserver:
-    image: apache/airflow:${AIRFLOW_IMAGE_TAG:-2.8.4}
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG}
     container_name: airflow_webserver_service
     depends_on:
       airflow-scheduler: # Ждет, пока планировщик будет здоров
         condition: service_healthy
     env_file:
       - .env
-    user: "${AIRFLOW_UID:-50000}:0"
+    user: "${AIRFLOW_UID}:0"
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs

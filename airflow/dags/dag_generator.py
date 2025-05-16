@@ -27,7 +27,7 @@ SUMMARIZER_DOCKER_IMAGE = os.getenv('SUMMARIZER_DOCKER_IMAGE_TAG', "telegram_sum
 CHANNELS_CONFIG_FILE_PATH_IN_CONTAINER = os.getenv('CHANNELS_CONFIG_FILE_IN_AIRFLOW_CONTAINER', '/opt/airflow/config/channels.json')
 
 # Имя сети Docker Compose
-DOCKER_NETWORK_NAME = os.getenv('DOCKER_NETWORK_NAME', 'app-network') # Запомнили дефолт
+DOCKER_NETWORK_NAME = os.getenv('DOCKER_NETWORK_NAME', 'mlops_project_app_net') # Запомнили дефолт
 
 # Путь к ПАПКЕ с файлами сессий Telegram на ХОСТ-МАШИНЕ (где работает Docker Engine)
 # Эту переменную пользователь должен задать в .env, указав АБСОЛЮТНЫЙ путь
@@ -66,10 +66,11 @@ if not channels_config_list:
 # Для чувствительных данных лучше использовать Airflow Connections.
 
 # База Данных Результатов
-DB_HOST_RESULTS = os.getenv('DB_HOST') # Должно быть имя сервиса БД результатов, например, postgres_results_db_service
+DB_HOST_RESULTS = os.getenv('DB_HOST')
 DB_NAME_RESULTS = os.getenv('DB_NAME')
 DB_USER_RESULTS = os.getenv('DB_USER')
 DB_PASSWORD_RESULTS = os.getenv('DB_PASSWORD')
+DB_PORT_RESULTS = os.getenv('DB_PORT')
 
 # Telegram API
 TELEGRAM_API_ID_ENV = os.getenv('TELEGRAM_API_ID')
@@ -121,8 +122,8 @@ for channel_config in channels_config_list:
         # --- Переменные окружения для задачи парсинга ---
         parser_environment = {
             'PARSER_CHANNEL_IDENTIFIER': telegram_identifier_for_parsing,
-            'PARSER_CHANNEL_ID': str(channel_id_numeric), # Передаем как строку, скрипт преобразует
-            'PARSER_TARGET_DATE': '{{ ds }}', # Логическая дата запуска DAG
+            'PARSER_CHANNEL_ID': str(channel_id_numeric),
+            'PARSER_TARGET_DATE': '{{ ds }}',
             'TELEGRAM_API_ID': TELEGRAM_API_ID_ENV,
             'TELEGRAM_API_HASH': TELEGRAM_API_HASH_ENV,
             'TELEGRAM_PHONE': TELEGRAM_PHONE_ENV,
@@ -132,6 +133,7 @@ for channel_config in channels_config_list:
             'DB_NAME': DB_NAME_RESULTS,
             'DB_USER': DB_USER_RESULTS,
             'DB_PASSWORD': DB_PASSWORD_RESULTS,
+            'DB_PORT': DB_PORT_RESULTS
         }
         # Очищаем от None значений
         parser_environment = {k: v for k, v in parser_environment.items() if v is not None}
@@ -143,23 +145,44 @@ for channel_config in channels_config_list:
             'DB_NAME': DB_NAME_RESULTS,
             'DB_USER': DB_USER_RESULTS,
             'DB_PASSWORD': DB_PASSWORD_RESULTS,
-            # Другие нужные переменные, если есть
+            'DB_PORT': DB_PORT_RESULTS
         }
         summarizer_environment = {k: v for k, v in summarizer_environment.items() if v is not None}
 
         # --- Настройка монтирования тома для сессии Telegram ---
-        parser_volumes = []
+        # parser_volumes = []
+        # if HOST_PATH_TO_TG_SESSIONS_FOLDER:
+        #     # Формируем путь к конкретному файлу сессии на хосте, если имя файла известно и общее
+        #     # Или монтируем всю папку. Для начала смонтируем всю папку.
+        #     # Это даст скрипту парсера доступ ко всем файлам в HOST_PATH_TO_TG_SESSIONS_FOLDER
+        #     # по пути TASK_CONTAINER_SESSIONS_PATH внутри контейнера.
+        #     # Скрипт парсера должен использовать TELEGRAM_SESSION_NAME для выбора нужного файла.
+        #     parser_volumes.append(f"{HOST_PATH_TO_TG_SESSIONS_FOLDER}:{TASK_CONTAINER_SESSIONS_PATH}:rw")
+        #     logger.info(f"Для DAG {dag_id} будет смонтирован том сессий: {HOST_PATH_TO_TG_SESSIONS_FOLDER} -> {TASK_CONTAINER_SESSIONS_PATH}")
+        # else:
+        #     logger.warning(f"Для DAG {dag_id}: HOST_PATH_TO_TG_SESSIONS_FOLDER не задан. Монтирование сессий не будет выполнено. Парсер может не работать, если требуется сессия.")
+        parser_mounts = [] # Используем mounts вместо volumes
         if HOST_PATH_TO_TG_SESSIONS_FOLDER:
-            # Формируем путь к конкретному файлу сессии на хосте, если имя файла известно и общее
-            # Или монтируем всю папку. Для начала смонтируем всю папку.
-            # Это даст скрипту парсера доступ ко всем файлам в HOST_PATH_TO_TG_SESSIONS_FOLDER
-            # по пути TASK_CONTAINER_SESSIONS_PATH внутри контейнера.
-            # Скрипт парсера должен использовать TELEGRAM_SESSION_NAME для выбора нужного файла.
-            parser_volumes.append(f"{HOST_PATH_TO_TG_SESSIONS_FOLDER}:{TASK_CONTAINER_SESSIONS_PATH}:rw")
-            logger.info(f"Для DAG {dag_id} будет смонтирован том сессий: {HOST_PATH_TO_TG_SESSIONS_FOLDER} -> {TASK_CONTAINER_SESSIONS_PATH}")
+            try:
+                # Проверяем, существует ли путь на хосте, чтобы избежать ошибок Docker
+                # Эта проверка выполняется в контексте airflow-scheduler, поэтому путь должен быть виден ему,
+                # если мы хотим проверить его до передачи в DockerOperator.
+                # Однако, DockerOperator сам передаст путь Docker Engine хоста.
+                # if not os.path.exists(HOST_PATH_TO_TG_SESSIONS_FOLDER): # Эта проверка может быть излишней/некорректной здесь
+                #     logger.error(f"Путь на хосте для сессий не найден: {HOST_PATH_TO_TG_SESSIONS_FOLDER}")
+                # else:
+                session_mount = Mount(
+                    target=TASK_CONTAINER_SESSIONS_PATH, # Куда монтировать ВНУТРИ контейнера задачи (например, '/app/session')
+                    source=HOST_PATH_TO_TG_SESSIONS_FOLDER, # Откуда монтировать на ХОСТЕ Docker Engine
+                    type='bind', # Тип монтирования
+                    read_only=False # Сессия может обновляться
+                )
+                parser_mounts.append(session_mount)
+                logger.info(f"Для DAG {dag_id} будет использован Mount: source='{HOST_PATH_TO_TG_SESSIONS_FOLDER}', target='{TASK_CONTAINER_SESSIONS_PATH}'")
+            except Exception as e:
+                logger.error(f"Ошибка при создании объекта Mount для сессий: {e}", exc_info=True)
         else:
-            logger.warning(f"Для DAG {dag_id}: HOST_PATH_TO_TG_SESSIONS_FOLDER не задан. Монтирование сессий не будет выполнено. Парсер может не работать, если требуется сессия.")
-
+            logger.warning(f"Для DAG {dag_id}: HOST_PATH_TO_TG_SESSIONS_FOLDER не задан. Монтирование сессий не будет выполнено.")
 
         # --- Задача 1: Парсинг постов ---
         parse_channel_task = DockerOperator(
@@ -167,7 +190,8 @@ for channel_config in channels_config_list:
             image=PARSER_DOCKER_IMAGE,
             command=["python", "telegram_parser.py"], # Путь к скрипту внутри образа (если WORKDIR /app)
             environment=parser_environment,
-            volumes=parser_volumes, # Монтируем том для сессии
+            # volumes=parser_volumes, # Монтируем том для сессии
+            mounts=parser_mounts,
             docker_url="unix://var/run/docker.sock",
             network_mode=DOCKER_NETWORK_NAME,
             auto_remove=True,
