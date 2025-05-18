@@ -138,6 +138,13 @@ for channel_config in channels_config_list:
         # Очищаем от None значений
         parser_environment = {k: v for k, v in parser_environment.items() if v is not None}
 
+        # Получаем XCom от предыдущей задачи.
+        # ti (task instance) - это объект, доступный в Jinja контексте.
+        # xcom_pull получает значение, которое было "запушено" задачей parse_channel_posts.
+        # Мы ожидаем, что это будет JSON-строка.
+        xcom_data_from_parser_json_str = "{{ ti.xcom_pull(task_ids='parse_channel_posts', key='return_value') }}"
+        # 'return_value' - это ключ по умолчанию, который использует DockerOperator при do_xcom_push=True
+
         # --- Переменные окружения для задачи суммризации ---
         summarizer_environment = {
             'GIGACHAT_API_KEY': GIGACHAT_API_KEY_ENV,
@@ -145,7 +152,8 @@ for channel_config in channels_config_list:
             'DB_NAME': DB_NAME_RESULTS,
             'DB_USER': DB_USER_RESULTS,
             'DB_PASSWORD': DB_PASSWORD_RESULTS,
-            'DB_PORT': DB_PORT_RESULTS
+            'DB_PORT': DB_PORT_RESULTS,
+            'XCOM_DATA_JSON': xcom_data_from_parser_json_str
         }
         summarizer_environment = {k: v for k, v in summarizer_environment.items() if v is not None}
 
@@ -186,21 +194,34 @@ for channel_config in channels_config_list:
 
         # --- Задача 1: Парсинг постов ---
         parse_channel_task = DockerOperator(
-            task_id="parse_channel_posts", # ID задачи внутри DAG
+            task_id="parse_channel_posts",
             image=PARSER_DOCKER_IMAGE,
-            command=["python", "telegram_parser.py"], # Путь к скрипту внутри образа (если WORKDIR /app)
+            # Используем bash -c для выполнения нескольких команд:
+            # 1. Запускаем парсер, сохраняем его код выхода.
+            # 2. Если файл XCom создан парсером, выводим его содержимое в stdout.
+            # 3. Завершаем скрипт с оригинальным кодом выхода парсера.
+            command=[
+                "bash", "-c",
+                """
+                python telegram_parser.py;
+                EXIT_CODE=$?;
+                echo "Python script exited with code $EXIT_CODE";
+                if [ -f /airflow/xcom/return.json ]; then
+                    echo "Found XCom file, outputting its content for XCom push:";
+                    cat /airflow/xcom/return.json;
+                else
+                    echo "XCom file /airflow/xcom/return.json not found by bash script.";
+                fi;
+                exit $EXIT_CODE
+                """
+            ],
             environment=parser_environment,
-            # volumes=parser_volumes, # Монтируем том для сессии
-            mounts=parser_mounts,
+            mounts=parser_mounts, # Оставляем монтирование сессий
             docker_url="unix://var/run/docker.sock",
             network_mode=DOCKER_NETWORK_NAME,
             auto_remove=True,
-            do_xcom_push=True, # Ожидаем XCom из файла /airflow/xcom/return.json
+            do_xcom_push=True, # Airflow возьмет последнюю строку stdout (которая будет JSON)
             mount_tmp_dir=False,
-            # Можно добавить ресурсы, если нужно
-            # cpus=0.5,
-            # mem_limit='512m',
-            # container_name=f"parser_task_{dag_id}_{{{{ ts_nodash }}}}" # Динамическое имя контейнера (опционально)
         )
 
         # --- Задача 2: Суммризация постов ---

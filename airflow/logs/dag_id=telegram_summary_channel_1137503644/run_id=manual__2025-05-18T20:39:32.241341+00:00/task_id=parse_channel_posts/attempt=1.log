@@ -1,0 +1,150 @@
+[2025-05-18T20:39:32.529+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts manual__2025-05-18T20:39:32.241341+00:00 [queued]>
+[2025-05-18T20:39:32.535+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts manual__2025-05-18T20:39:32.241341+00:00 [queued]>
+[2025-05-18T20:39:32.535+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 2
+[2025-05-18T20:39:32.543+0000] {taskinstance.py:2191} INFO - Executing <Task(DockerOperator): parse_channel_posts> on 2025-05-18 20:39:32.241341+00:00
+[2025-05-18T20:39:32.550+0000] {standard_task_runner.py:60} INFO - Started process 177 to run task
+[2025-05-18T20:39:32.554+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'telegram_summary_channel_1137503644', 'parse_channel_posts', 'manual__2025-05-18T20:39:32.241341+00:00', '--job-id', '64', '--raw', '--subdir', 'DAGS_FOLDER/dag_generator.py', '--cfg-path', '/tmp/tmplqviv7sb']
+[2025-05-18T20:39:32.556+0000] {standard_task_runner.py:88} INFO - Job 64: Subtask parse_channel_posts
+[2025-05-18T20:39:32.604+0000] {task_command.py:423} INFO - Running <TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts manual__2025-05-18T20:39:32.241341+00:00 [running]> on host e5cd1b16e7bb
+[2025-05-18T20:39:32.671+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='telegram_summary_channel_1137503644' AIRFLOW_CTX_TASK_ID='parse_channel_posts' AIRFLOW_CTX_EXECUTION_DATE='2025-05-18T20:39:32.241341+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-05-18T20:39:32.241341+00:00'
+[2025-05-18T20:39:32.730+0000] {docker.py:359} INFO - Starting docker container from image telegram_parser_task:latest
+[2025-05-18T20:39:33.090+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Запуск основного асинхронного процесса парсера (локальный или прямой вызов)...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Using selector: EpollSelector
+[2025-05-18T20:39:33.091+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - --- Запуск скрипта парсера (Airflow Task) ---
+[2025-05-18 20:39:33] [INFO] [Parser] - Попытка подключения к БД (1/5): host=postgres_results_db_service port=5432 dbname=parsing_results user=parser_user
+[2025-05-18T20:39:33.095+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Успешное подключение к БД!
+[2025-05-18 20:39:33] [INFO] [Parser] - Проверка/создание таблицы 'telegram_messages'...
+[2025-05-18T20:39:33.100+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Схема БД 'telegram_messages' проверена/обновлена.
+[2025-05-18 20:39:33] [INFO] [Parser] - Инициализация Telegram клиента с сессией: /app/session/my_telegram_session
+[2025-05-18T20:39:33.102+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Файл сессии '/app/session/my_telegram_session.session' существует: True
+[2025-05-18T20:39:33.102+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Подключение к Telegram...
+[2025-05-18T20:39:33.103+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Connecting to 149.154.167.51:443/TcpFull...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Connection attempt 1...
+[2025-05-18T20:39:33.163+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Connection success!
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Starting send loop
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Starting receive loop
+[2025-05-18 20:39:33] [INFO] [Parser] - Connection to 149.154.167.51:443/TcpFull complete!
+[2025-05-18T20:39:33.172+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888167186021580 to InvokeWithLayerRequest (ff1bb73853d0)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 80 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.229+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling bad salt for message 7505888167186021580
+[2025-05-18 20:39:33] [DEBUG] [Parser] - 1 message(s) will be resent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888167412722364 to InvokeWithLayerRequest (ff1bb73853d0)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 80 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888167413323180 to MsgsAck (ff1bb73854f0)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.283+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling container
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Handling new session created
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Handling acknowledge for [7505888167412722364]
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.360+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling RPC result for message 7505888167412722364
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888167935979620 to GetUsersRequest (ff1bb7385850)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 32 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888167936463132 to MsgsAck (ff1bb7385460)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 60 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.466+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling RPC result for message 7505888167935979620
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.467+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888168365510716 to GetStateRequest (ff1bb7385850)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 20 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888168366235508 to MsgsAck (ff1bb7385b80)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.556+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling RPC result for message 7505888168365510716
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.557+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888168723407520 to GetDifferenceRequest (ff1bb837b160)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888168723996892 to MsgsAck (ff1bb73856a0)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.632+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling RPC result for message 7505888168723407520
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.633+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888169030618444 to GetUsersRequest (ff1bb7385d60)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 32 bytes for sending
+[2025-05-18T20:39:33.633+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.633+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888169032212032 to MsgsAck (ff1bb73857f0)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18T20:39:33.633+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.693+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling RPC result for message 7505888169030618444
+[2025-05-18T20:39:33.693+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.693+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Успешно подключен к Telegram как Ильяс (ID: 1257870016).
+[2025-05-18T20:39:33.693+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Начало парсинга канала 'https://t.me/trader_chernyh' за дату 2025-05-18
+[2025-05-18 20:39:33] [INFO] [Parser] - Получение информации о канале 'https://t.me/trader_chernyh'...
+[2025-05-18T20:39:33.693+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888169273127332 to ResolveUsernameRequest (ff1bb7380940)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 40 bytes for sending
+[2025-05-18T20:39:33.694+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888169273988500 to MsgsAck (ff1bb7385400)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18T20:39:33.694+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:33.757+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Handling RPC result for message 7505888169273127332
+[2025-05-18T20:39:33.757+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:33.757+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [INFO] [Parser] - Канал найден: 'Евгений Черных и 401🍋' (ID: 1137503644)
+[2025-05-18 20:39:33] [INFO] [Parser] - Итерация сообщений с offset_date=2025-05-19T00:00:00+00:00...
+[2025-05-18T20:39:33.758+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888169529873624 to GetHistoryRequest (ff1bb73808e0)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 72 bytes for sending
+[2025-05-18T20:39:33.758+0000] {docker.py:429} INFO - [2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Assigned msg_id = 7505888169530727164 to MsgsAck (ff1bb7380940)
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypting 1 message(s) in 36 bytes for sending
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Encrypted messages put in a queue to be sent
+[2025-05-18 20:39:33] [DEBUG] [Parser] - Waiting for messages to send...
+[2025-05-18T20:39:34.059+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Handling RPC result for message 7505888169529873624
+[2025-05-18T20:39:34.075+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Receiving items from the network...
+[2025-05-18T20:39:34.088+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Достигнуто начало дня 2025-05-18. Завершение итерации.
+[2025-05-18 20:39:34] [INFO] [Parser] - Парсинг завершен. Получено сообщений: 2
+[2025-05-18T20:39:34.088+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Список сообщений развернут.
+[2025-05-18 20:39:34] [INFO] [Parser] - Успешно получено 2 сообщений из Telegram.
+[2025-05-18 20:39:34] [INFO] [Parser] - Начало сохранения 2 сообщений в БД...
+[2025-05-18T20:39:34.088+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 29) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 148) как UTF-8, используется base64.
+[2025-05-18T20:39:34.089+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Данные для вставки (ID: 9668): {'message_id': 9668, 'channel_id': 1137503644, 'message_date': datetime.datetime(2025, 5, 18, 9, 30, 40, tzinfo=datetime.timezone.utc), 'text': '**Ну что, коллеги, котлету зажарили? ****😁****\n**\nПомните, как на прошлой неделе говорил: **уровень 2780 по индексу надо выкупать?**\n\n✅ Уровень устоял. Кто успел — красавчик. \n\n**Можете смело брать с полки пирожок. С вареньем, не с капустой.\n**\nНО! Мы отскочили. И я уже вижу зону, где могут начать падать акции.\n\nВ новом ролике рассказал об этом 👇\n\n[**➡️ Ютуб**](https://youtu.be/5AwSbmokQz8)\n\n[**➡️ Рутуб**](https://rutube.ru/video/5ee7f6f9a8012d868d2e43ecf69c6ba2/)\n\n[**➡️ ВК.видео**](https://vk.com/trader_chernyh?z=video-98605354_456239285%2F2864508e17832f796a%2Fpl_wall_314989763)', 'sender_id': -1001137503644, 'views': 22720, 'forwards': 37, 'is_reply': False, 'reply_to_msg_id': None, 'has_media': True, 'raw_data_type': 'Json'}
+[2025-05-18T20:39:34.091+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 29) как UTF-8, используется base64.
+[2025-05-18T20:39:34.091+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 136) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 29) как UTF-8, используется base64.
+[2025-05-18T20:39:34.093+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 137) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 29) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 29) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 137) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Не удалось декодировать bytes (длина: 29) как UTF-8, используется base64.
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Данные для вставки (ID: 9669): {'message_id': 9669, 'channel_id': 1137503644, 'message_date': datetime.datetime(2025, 5, 18, 13, 25, 12, tzinfo=datetime.timezone.utc), 'text': 'На бирже у нас сейчас ключевой момент и вот почему:\n\n1️⃣ Технически идет завершение треугольника. И отсюда будет молниеносный выход! **__На принятие решения у Вас осталась одна неделя.__**\n\nГляньте ролик выше ⬆️ \n\n2️⃣ Забавно, что это совпадает с долгожданными переговорами в Стамбуле.  Тот случай, когда техника на графиках рулит политикой.\n\nВот ссылки на обзоры. Срочно смотрим и готовимся! ⬇️\n\n[**➡️ Ютуб**](https://youtu.be/5AwSbmokQz8)\n\n[**➡️ Рутуб**](https://rutube.ru/video/5ee7f6f9a8012d868d2e43ecf69c6ba2/)\n\n[**➡️ ВК.видео**](https://vk.com/trader_chernyh?z=video-98605354_456239285%2F2864508e17832f796a%2Fpl_wall_314989763)\n\n__Забавно, что точно такой же тезис после просмотра моего ролика, растащили себе инфоцыгане. Гопоте на пиво не хватает)__ __Который__ __раз воруют идеи__', 'sender_id': -1001137503644, 'views': 18838, 'forwards': 36, 'is_reply': False, 'reply_to_msg_id': None, 'has_media': True, 'raw_data_type': 'Json'}
+[2025-05-18 20:39:34] [INFO] [Parser] - Сохранение в БД завершено. Новых записей: 0, пропущено (ошибки/дубликаты): 2.
+[2025-05-18 20:39:34] [INFO] [Parser] - Результаты сохранения в БД: 0 новых, 2 пропущено (дубликаты/ошибки).
+[2025-05-18 20:39:34] [INFO] [Parser] - Все полученные сообщения уже существуют в БД (или были пропущены без ошибок вставки).
+[2025-05-18 20:39:34] [INFO] [Parser] - Запись данных XCom в файл: /airflow/xcom/return.json
+[2025-05-18T20:39:34.093+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Создана директория для XCom: /airflow/xcom
+[2025-05-18T20:39:34.093+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Данные XCom успешно записаны: {'channel_id': 1137503644, 'target_date_str': '2025-05-18', 'parsed_count': 2, 'saved_count': 0, 'skipped_because_duplicate_or_no_error': 2, 'status': 'success_duplicates_found', 'error_type': None, 'error_message': None}
+[2025-05-18 20:39:34] [INFO] [Parser] - Отключение от Telegram...
+[2025-05-18T20:39:34.094+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Disconnecting from 149.154.167.51:443/TcpFull...
+[2025-05-18 20:39:34] [DEBUG] [Parser] - Closing current connection...
+[2025-05-18T20:39:34.094+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [DEBUG] [Parser] - Cancelling 0 pending message(s)...
+[2025-05-18 20:39:34] [INFO] [Parser] - Disconnection from 149.154.167.51:443/TcpFull complete!
+[2025-05-18T20:39:34.098+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Соединение с Telegram закрыто.
+[2025-05-18 20:39:34] [INFO] [Parser] - Закрытие соединения с БД...
+[2025-05-18 20:39:34] [INFO] [Parser] - Соединение с БД закрыто.
+[2025-05-18 20:39:34] [INFO] [Parser] - --- Скрипт парсера завершен с кодом выхода: 0 ---
+[2025-05-18T20:39:34.098+0000] {docker.py:429} INFO - [2025-05-18 20:39:34] [INFO] [Parser] - Перехвачен SystemExit с кодом 0. Завершение (из __main__).
+[2025-05-18T20:39:34.353+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=telegram_summary_channel_1137503644, task_id=parse_channel_posts, execution_date=20250518T203932, start_date=20250518T203932, end_date=20250518T203934
+[2025-05-18T20:39:34.374+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2025-05-18T20:39:34.391+0000] {taskinstance.py:3280} INFO - 1 downstream tasks scheduled from follow-on schedule check
