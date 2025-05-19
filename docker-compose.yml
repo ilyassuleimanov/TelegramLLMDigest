@@ -180,6 +180,29 @@ services:
       timeout: 10s
       retries: 5
 
+  streamlit_service:
+    build:
+      context: ./streamlit_app # Путь к папке с Dockerfile и кодом Streamlit
+      dockerfile: Dockerfile
+    container_name: streamlit_ui_service
+    env_file:
+      - .env # Подтягиваем переменные из .env
+    # Переменная окружения, указывающая на URL FastAPI сервиса
+    # Это значение должно быть определено в вашем .env файле
+    # Например: FASTAPI_BASE_URL=http://fastapi_api_service:8000
+    environment:
+      FASTAPI_BASE_URL: ${FASTAPI_BASE_URL}
+      # Если Streamlit нужны еще какие-то переменные, добавьте их сюда
+    ports:
+      - "${STREAMLIT_PORT_ON_HOST}:8501" # Пробрасываем порт Streamlit на хост
+    networks:
+      - app-network # Используем ту же сеть
+    depends_on:
+      fastapi_service: # Streamlit зависит от FastAPI сервиса
+        condition: service_healthy # Ждет, пока FastAPI будет готов (если у FastAPI есть healthcheck)
+                                   # или service_started, если healthcheck'а нет, но это менее надежно
+    restart: unless-stopped
+
 volumes:
   postgres_results_data:
   postgres_airflow_data:
