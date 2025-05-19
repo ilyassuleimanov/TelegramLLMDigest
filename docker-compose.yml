@@ -143,7 +143,42 @@ services:
       timeout: 10s
       retries: 5
 
-  # Сервисы parser и summarizer УДАЛЕНЫ, так как их логика будет запускаться через Airflow DockerOperator
+  # === API Сервис для Результатов ===
+  fastapi_service:
+    build:
+      context: ./fastAPI_app # Путь к папке с Dockerfile и кодом FastAPI
+      dockerfile: Dockerfile
+    container_name: fastapi_api_service # Даем понятное имя контейнеру
+    env_file:
+      - .env # Подтягиваем все переменные из .env файла
+    environment:
+      # Явно передаем переменные, которые main.py ожидает,
+      # используя значения из .env (Docker Compose автоматически их подставит)
+      # или напрямую задавая их, если они отличаются от тех, что в .env
+      CHANNELS_FILE_PATH: ${CHANNELS_FILE_PATH_IN_CONTAINER} # Путь ВНУТРИ контейнера FastAPI
+      DB_HOST: ${DB_HOST} # Имя сервиса БД результатов
+      DB_PORT: ${DB_PORT} # Внутренний порт контейнера PostgreSQL
+      DB_USER: ${DB_USER} # Используем те же, что для postgres_results_db_service
+      DB_PASSWORD: ${DB_PASSWORD} # Используем те же, что для postgres_results_db_service
+      DB_NAME: ${DB_NAME} # Используем те же, что для postgres_results_db_service
+    volumes:
+      # Монтируем файл channels.json с хоста в контейнер
+      - ${CHANNELS_CONFIG_FILE_ON_HOST}:${CHANNELS_FILE_PATH_IN_CONTAINER}:ro # ro = read-only
+      # Для разработки с --reload можно смонтировать весь код приложения
+      - ./fastAPI_app:/app # Код FastAPI монтируется в /app (где WORKDIR в Dockerfile)
+    ports:
+      - "${FASTAPI_PORT_ON_HOST:-8000}:8000" # Пробрасываем порт FastAPI на хост
+    networks:
+      - app-network # Используем ту же сеть, что и другие сервисы
+    depends_on:
+      postgres_results_db_service: # FastAPI зависит от базы данных результатов
+        condition: service_healthy # Ждет, пока БД будет готова
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8000/docs || exit 1"] # Проверяем доступность Swagger UI
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 volumes:
   postgres_results_data:
