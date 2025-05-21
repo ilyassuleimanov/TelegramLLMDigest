@@ -1,0 +1,60 @@
+[2025-05-20T21:04:25.480+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts scheduled__2025-05-20T18:00:00+00:00 [queued]>
+[2025-05-20T21:04:25.493+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts scheduled__2025-05-20T18:00:00+00:00 [queued]>
+[2025-05-20T21:04:25.494+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 2
+[2025-05-20T21:04:25.510+0000] {taskinstance.py:2191} INFO - Executing <Task(DockerOperator): parse_channel_posts> on 2025-05-20 18:00:00+00:00
+[2025-05-20T21:04:25.517+0000] {standard_task_runner.py:60} INFO - Started process 184 to run task
+[2025-05-20T21:04:25.524+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'telegram_summary_channel_1137503644', 'parse_channel_posts', 'scheduled__2025-05-20T18:00:00+00:00', '--job-id', '165', '--raw', '--subdir', 'DAGS_FOLDER/dag_generator.py', '--cfg-path', '/tmp/tmpv1ot226j']
+[2025-05-20T21:04:25.526+0000] {standard_task_runner.py:88} INFO - Job 165: Subtask parse_channel_posts
+[2025-05-20T21:04:25.601+0000] {task_command.py:423} INFO - Running <TaskInstance: telegram_summary_channel_1137503644.parse_channel_posts scheduled__2025-05-20T18:00:00+00:00 [running]> on host 56d55b2fde31
+[2025-05-20T21:04:25.726+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='telegram_summary_channel_1137503644' AIRFLOW_CTX_TASK_ID='parse_channel_posts' AIRFLOW_CTX_EXECUTION_DATE='2025-05-20T18:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2025-05-20T18:00:00+00:00'
+[2025-05-20T21:04:25.819+0000] {docker.py:359} INFO - Starting docker container from image telegram_parser_task:latest
+[2025-05-20T21:04:27.633+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Запуск основного асинхронного процесса парсера (локальный или прямой вызов)...
+[2025-05-20 21:04:27] [INFO] [Parser] - --- Запуск скрипта парсера (Airflow Task) ---
+[2025-05-20 21:04:27] [INFO] [Parser] - Попытка подключения к БД (1/5): host=postgres_results_db_service port=5432 dbname=parsing_results user=parser_user
+[2025-05-20T21:04:27.673+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Успешное подключение к БД!
+[2025-05-20 21:04:27] [INFO] [Parser] - Проверка/создание таблицы 'telegram_messages'...
+[2025-05-20T21:04:27.700+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Схема БД 'telegram_messages' проверена/обновлена.
+[2025-05-20T21:04:27.700+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Инициализация Telegram клиента с сессией: /app/session/my_telegram_session
+[2025-05-20 21:04:27] [INFO] [Parser] - Файл сессии '/app/session/my_telegram_session.session' существует: True
+[2025-05-20T21:04:27.710+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Подключение к Telegram...
+[2025-05-20T21:04:27.711+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Connecting to 149.154.167.51:443/TcpFull...
+[2025-05-20T21:04:27.782+0000] {docker.py:429} INFO - [2025-05-20 21:04:27] [INFO] [Parser] - Connection to 149.154.167.51:443/TcpFull complete!
+[2025-05-20T21:04:31.763+0000] {docker.py:429} INFO - [2025-05-20 21:04:31] [INFO] [Parser] - Успешно подключен к Telegram как Ильяс (ID: 1257870016).
+[2025-05-20 21:04:31] [INFO] [Parser] - Начало парсинга канала 'https://t.me/trader_chernyh' за дату 2025-05-20
+[2025-05-20 21:04:31] [INFO] [Parser] - Получение информации о канале 'https://t.me/trader_chernyh'...
+[2025-05-20T21:04:31.823+0000] {docker.py:429} INFO - [2025-05-20 21:04:31] [INFO] [Parser] - Канал найден: 'Евгений Черных и 401🍋' (ID: 1137503644)
+[2025-05-20 21:04:31] [INFO] [Parser] - Итерация сообщений с offset_date=2025-05-21T00:00:00+00:00...
+[2025-05-20T21:04:32.183+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Достигнуто начало дня 2025-05-20. Завершение итерации.
+[2025-05-20 21:04:32] [INFO] [Parser] - Парсинг завершен. Получено сообщений: 9
+[2025-05-20 21:04:32] [INFO] [Parser] - Список сообщений развернут.
+[2025-05-20 21:04:32] [INFO] [Parser] - Успешно получено 9 сообщений из Telegram.
+[2025-05-20 21:04:32] [INFO] [Parser] - Начало сохранения 9 сообщений в БД...
+[2025-05-20T21:04:32.198+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Сохранение в БД завершено. Новых записей: 0, пропущено (ошибки/дубликаты): 9.
+[2025-05-20 21:04:32] [INFO] [Parser] - Результаты сохранения в БД: 0 новых, 9 пропущено (дубликаты/ошибки).
+[2025-05-20 21:04:32] [INFO] [Parser] - Все полученные сообщения уже существуют в БД (или были пропущены без ошибок вставки).
+[2025-05-20 21:04:32] [INFO] [Parser] - Запись данных XCom в файл: /airflow/xcom/return.json
+[2025-05-20T21:04:32.201+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Создана директория для XCom: /airflow/xcom
+[2025-05-20T21:04:32.201+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Данные XCom успешно записаны: {'channel_id': 1137503644, 'target_date_str': '2025-05-20', 'parsed_count': 9, 'saved_count': 0, 'skipped_because_duplicate_or_no_error': 9, 'status': 'success_duplicates_found', 'error_type': None, 'error_message': None}
+[2025-05-20 21:04:32] [INFO] [Parser] - Отключение от Telegram...
+[2025-05-20T21:04:32.201+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Disconnecting from 149.154.167.51:443/TcpFull...
+[2025-05-20T21:04:32.202+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Disconnection from 149.154.167.51:443/TcpFull complete!
+[2025-05-20T21:04:32.225+0000] {docker.py:429} INFO - [2025-05-20 21:04:32] [INFO] [Parser] - Соединение с Telegram закрыто.
+[2025-05-20 21:04:32] [INFO] [Parser] - Закрытие соединения с БД...
+[2025-05-20 21:04:32] [INFO] [Parser] - Соединение с БД закрыто.
+[2025-05-20 21:04:32] [INFO] [Parser] - --- Скрипт парсера завершен с кодом выхода: 0 (XCom записан: True) ---
+[2025-05-20 21:04:32] [INFO] [Parser] - Перехвачен SystemExit с кодом 0. Завершение (из __main__).
+[2025-05-20T21:04:32.312+0000] {docker.py:429} INFO - Python script exited with code 0
+Found XCom file, outputting its content for XCom push:
+[2025-05-20T21:04:32.316+0000] {docker.py:429} INFO - {
+  "channel_id": 1137503644,
+  "target_date_str": "2025-05-20",
+  "parsed_count": 9,
+  "saved_count": 0,
+  "skipped_because_duplicate_or_no_error": 9,
+  "status": "success_duplicates_found",
+  "error_type": null,
+  "error_message": null
+}
+[2025-05-20T21:04:32.758+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=telegram_summary_channel_1137503644, task_id=parse_channel_posts, execution_date=20250520T180000, start_date=20250520T210425, end_date=20250520T210432
+[2025-05-20T21:04:32.821+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2025-05-20T21:04:32.893+0000] {taskinstance.py:3280} INFO - 1 downstream tasks scheduled from follow-on schedule check

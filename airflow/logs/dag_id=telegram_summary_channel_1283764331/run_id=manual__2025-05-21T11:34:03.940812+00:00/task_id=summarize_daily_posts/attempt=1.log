@@ -1,0 +1,35 @@
+[2025-05-21T11:34:06.912+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: telegram_summary_channel_1283764331.summarize_daily_posts manual__2025-05-21T11:34:03.940812+00:00 [queued]>
+[2025-05-21T11:34:06.916+0000] {taskinstance.py:1956} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: telegram_summary_channel_1283764331.summarize_daily_posts manual__2025-05-21T11:34:03.940812+00:00 [queued]>
+[2025-05-21T11:34:06.917+0000] {taskinstance.py:2170} INFO - Starting attempt 1 of 2
+[2025-05-21T11:34:06.924+0000] {taskinstance.py:2191} INFO - Executing <Task(DockerOperator): summarize_daily_posts> on 2025-05-21 11:34:03.940812+00:00
+[2025-05-21T11:34:06.928+0000] {standard_task_runner.py:60} INFO - Started process 308 to run task
+[2025-05-21T11:34:06.931+0000] {standard_task_runner.py:87} INFO - Running: ['airflow', 'tasks', 'run', 'telegram_summary_channel_1283764331', 'summarize_daily_posts', 'manual__2025-05-21T11:34:03.940812+00:00', '--job-id', '244', '--raw', '--subdir', 'DAGS_FOLDER/dag_generator.py', '--cfg-path', '/tmp/tmpz0o0coyx']
+[2025-05-21T11:34:06.933+0000] {standard_task_runner.py:88} INFO - Job 244: Subtask summarize_daily_posts
+[2025-05-21T11:34:06.969+0000] {task_command.py:423} INFO - Running <TaskInstance: telegram_summary_channel_1283764331.summarize_daily_posts manual__2025-05-21T11:34:03.940812+00:00 [running]> on host ae09eee6c3ae
+[2025-05-21T11:34:07.037+0000] {taskinstance.py:2480} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='airflow' AIRFLOW_CTX_DAG_ID='telegram_summary_channel_1283764331' AIRFLOW_CTX_TASK_ID='summarize_daily_posts' AIRFLOW_CTX_EXECUTION_DATE='2025-05-21T11:34:03.940812+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-05-21T11:34:03.940812+00:00'
+[2025-05-21T11:34:07.093+0000] {docker.py:359} INFO - Starting docker container from image telegram_summarizer_task:latest
+[2025-05-21T11:34:07.440+0000] {docker.py:429} INFO - [2025-05-21 11:34:07] [INFO] [Summarizer] - Запуск основного процесса суммризатора (локальный или прямой вызов)...
+[2025-05-21 11:34:07] [INFO] [Summarizer] - --- Запуск скрипта суммризации (Airflow Task) ---
+[2025-05-21 11:34:07] [INFO] [Summarizer] - Попытка разбора XCom из переменной окружения 'XCOM_DATA_JSON'...
+[2025-05-21 11:34:07] [INFO] [Summarizer] - Прочитаны данные XCom: channel_id=1283764331, target_date_str=2025-05-21, parser_status=success_duplicates_found
+[2025-05-21 11:34:07] [WARNING] [Summarizer] - Статус предыдущей задачи парсинга: 'success_duplicates_found'. Саммаризация может быть неполной или основана на ошибочных данных.
+[2025-05-21T11:34:07.452+0000] {docker.py:429} INFO - [2025-05-21 11:34:07] [INFO] [Summarizer] - Успешное подключение к БД parsing_results на postgres_results_db_service:5432
+[2025-05-21T11:34:07.453+0000] {docker.py:429} INFO - [2025-05-21 11:34:07] [INFO] [Summarizer] - Проверка/создание таблицы 'summaries'...
+[2025-05-21T11:34:07.453+0000] {docker.py:429} INFO - [2025-05-21 11:34:07] [INFO] [Summarizer] - Таблица 'summaries' проверена/создана.
+[2025-05-21 11:34:07] [INFO] [Summarizer] - Извлечение постов для channel_id=1283764331 за дату=2025-05-21 (UTC: >= 2025-05-21 00:00:00+00:00 и < 2025-05-22 00:00:00+00:00)
+[2025-05-21T11:34:07.456+0000] {docker.py:429} INFO - [2025-05-21 11:34:07] [INFO] [Summarizer] - Найдено 12 постов для саммаризации.
+[2025-05-21 11:34:07] [INFO] [Summarizer] - Формирование промпта из 12 текстов (макс. 15)...
+[2025-05-21 11:34:07] [INFO] [Summarizer] - Промпт успешно сформирован из 12 новостей.
+[2025-05-21 11:34:07] [INFO] [Summarizer] - Отправка запроса к GigaChat API...
+[2025-05-21T11:34:07.569+0000] {docker.py:429} INFO - [2025-05-21 11:34:07] [INFO] [Summarizer] - HTTP Request: POST https://ngw.devices.sberbank.ru:9443/api/v2/oauth "HTTP/1.1 200 OK"
+[2025-05-21T11:34:10.684+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - HTTP Request: POST https://gigachat.devices.sberbank.ru/api/v1/chat/completions "HTTP/1.1 200 OK"
+[2025-05-21T11:34:10.686+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - Саммари успешно получено от GigaChat.
+[2025-05-21T11:34:10.688+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - Попытка сохранения/обновления саммари для channel_id=1283764331 за дату=2025-05-21
+[2025-05-21T11:34:10.692+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - Саммари успешно сохранено/обновлено в БД.
+[2025-05-21T11:34:10.693+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - Соединение с БД закрыто.
+[2025-05-21T11:34:10.693+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - --- Скрипт суммризации завершен с кодом выхода: 0 ---
+[2025-05-21T11:34:10.693+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - Суммризатор: Перехвачен SystemExit с кодом 0. Завершение.
+[2025-05-21T11:34:10.693+0000] {docker.py:429} INFO - [2025-05-21 11:34:10] [INFO] [Summarizer] - Скрипт суммризатора окончательно завершается с кодом 0 (из __main__ блока).
+[2025-05-21T11:34:10.984+0000] {taskinstance.py:1138} INFO - Marking task as SUCCESS. dag_id=telegram_summary_channel_1283764331, task_id=summarize_daily_posts, execution_date=20250521T113403, start_date=20250521T113406, end_date=20250521T113410
+[2025-05-21T11:34:11.047+0000] {local_task_job_runner.py:234} INFO - Task exited with return code 0
+[2025-05-21T11:34:11.067+0000] {taskinstance.py:3280} INFO - 0 downstream tasks scheduled from follow-on schedule check

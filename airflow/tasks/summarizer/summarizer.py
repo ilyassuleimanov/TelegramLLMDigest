@@ -3,24 +3,23 @@ import sys
 import psycopg2
 import logging
 import json
-from datetime import datetime, date, time, timedelta, timezone # Убедимся, что все импортированы
+from datetime import datetime, date, time, timedelta, timezone
 from dotenv import load_dotenv
 from gigachat import GigaChat
 from gigachat.models import Chat, Messages, MessagesRole
-from typing import List, Optional, Dict, Any # Добавляем типизацию
+from typing import List, Optional, Dict, Any
 
-# --- Настройка Логгирования ---
+# Настройка Логгирования
 logging.basicConfig(
     level=logging.INFO,
     format='[%(asctime)s] [%(levelname)s] [Summarizer] - %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
-logger = logging.getLogger(__name__) # Используем именованный логгер
+logger = logging.getLogger(__name__)
 
-# --- Загрузка Переменных Окружения ---
+# Загрузка и чтение переменных окружения 
 load_dotenv()
 
-# --- Чтение Конфигурации из Переменных Окружения ---
 GIGACHAT_API_KEY = os.getenv('GIGACHAT_API_KEY')
 DB_HOST = os.getenv('DB_HOST', 'postgres_results_db_service')
 DB_PORT = os.getenv('DB_PORT', '5432')
@@ -34,10 +33,10 @@ LLM_MODEL_NAME = os.getenv('LLM_MODEL_NAME', "GigaChat")
 LLM_TEMPERATURE = float(os.getenv('LLM_TEMPERATURE', 0.7))
 LLM_MAX_TOKENS = int(os.getenv('LLM_MAX_TOKENS', 700))
 
-# --- Переменная окружения для XCom данных (вместо пути к файлу) ---
+# Переменная окружения для XCom данных
 XCOM_DATA_ENV_VAR = "XCOM_DATA_JSON" # Имя переменной окружения, которую будет устанавливать DAG
 
-# --- Проверка Обязательных Переменных Окружения ---
+# Проверка Обязательных Переменных Окружения
 required_env_vars = {
     'GIGACHAT_API_KEY': GIGACHAT_API_KEY,
     'DB_NAME': DB_NAME,
@@ -50,7 +49,7 @@ if missing_env_vars:
     logger.error(f"Ошибка: Не установлены обязательные переменные окружения: {', '.join(missing_env_vars)}")
     sys.exit(1)
 
-# --- Функции Работы с Базой Данных ---
+# Функции работы с базой данных
 
 def get_db_connection() -> Optional[psycopg2.extensions.connection]:
     """Устанавливает соединение с базой данных PostgreSQL."""
@@ -173,7 +172,7 @@ def save_or_update_summary(conn: psycopg2.extensions.connection, channel_id: int
             logger.error(f"Ошибка при откате транзакции: {rb_error}")
         return False
 
-# --- Логика Суммаризации ---
+# Логика суммаризации
 
 def build_llm_prompt(posts_texts: List[str], target_date_str: str) -> Optional[str]:
     """Формирует промпт для LLM из текстов постов за конкретную дату."""
@@ -244,7 +243,7 @@ def get_summary_from_gigachat(prompt: str) -> Optional[str]:
         logger.error(f"Ошибка при взаимодействии с GigaChat API: {e}", exc_info=True)
         return None
 
-# --- Основной Блок Выполнения ---
+# Основной блок выполнения
 
 def main():
     """Основная логика скрипта суммризации, запускаемая как задача Airflow."""
@@ -253,7 +252,7 @@ def main():
     exit_code = 0
 
     try:
-        # 1. Чтение данных XCom из ПЕРЕМЕННОЙ ОКРУЖЕНИЯ
+        # Чтение данных XCom из переменной коружения
         xcom_data_json_str = os.getenv(XCOM_DATA_ENV_VAR)
         channel_id: Optional[int] = None
         target_date_str: Optional[str] = None
@@ -267,15 +266,13 @@ def main():
             xcom_data = json.loads(xcom_data_json_str)
             channel_id = int(xcom_data.get("channel_id"))
             target_date_str = xcom_data.get("target_date_str")
-            # Проверяем статус из парсера (опционально)
+            # Проверяем статус из парсера
             parser_status = xcom_data.get("status", "unknown")
             logger.info(f"Прочитаны данные XCom: channel_id={channel_id}, target_date_str={target_date_str}, parser_status={parser_status}")
 
             if parser_status != "success":
                 logger.warning(f"Статус предыдущей задачи парсинга: '{parser_status}'. "
                                f"Саммаризация может быть неполной или основана на ошибочных данных.")
-                # Можно решить, прерывать ли выполнение, если парсер не был полностью успешен.
-                # Например, если parsed_count=0 и saved_count=0, то и суммировать нечего.
                 if xcom_data.get("parsed_count", 0) == 0:
                     logger.info("Парсер не нашел или не сохранил сообщений. Суммаризация не требуется.")
                     sys.exit(0) # Успешный выход, т.к. нет работы
@@ -289,14 +286,14 @@ def main():
              logger.error("Ошибка: Необходимые данные 'channel_id' (int) или 'target_date_str' отсутствуют или некорректны в XCom.")
              sys.exit(1)
 
-        # 2. Преобразование даты
+        # Преобразование даты
         try:
             target_date = datetime.strptime(target_date_str, '%Y-%m-%d').date()
         except ValueError:
             logger.error(f"Ошибка: Неверный формат target_date_str ('{target_date_str}') из XCom. Ожидается 'YYYY-MM-DD'.")
             sys.exit(1)
 
-        # 3. Подключение к БД и проверка схемы
+        # Подключение к БД и проверка схемы
         connection = get_db_connection()
         if not connection:
             sys.exit(1)
@@ -304,30 +301,28 @@ def main():
         if not setup_summaries_table(connection):
             sys.exit(1)
 
-        # 4. Извлечение постов за указанный день и канал
+        # Извлечение постов за указанный день и канал
         posts_texts = fetch_posts_for_day(connection, channel_id, target_date)
 
         if not posts_texts:
             logger.info(f"Постов для саммаризации не найдено для channel_id={channel_id} за дату={target_date}.")
-            # Решаем создать/обновить запись в summaries с пометкой, что новостей не было
-            # Это важно для UI, чтобы показать, что обработка за день была.
             if not save_or_update_summary(connection, channel_id, target_date, "Новостей за этот день не найдено.", "System"):
                 logger.error("Не удалось сохранить информацию об отсутствии новостей.")
                 exit_code = 1 # Считаем ошибкой, если не смогли даже это записать
             else:
                 exit_code = 0 # Успех, обработка завершена
         else:
-            # 5. Формирование промпта
+            # Формирование промпта
             final_prompt = build_llm_prompt(posts_texts, target_date_str)
 
             if not final_prompt:
                 logger.error("Не удалось сформировать промпт.")
                 exit_code = 1
             else:
-                # 6. Получение саммари
+                # Получение саммари
                 summary = get_summary_from_gigachat(final_prompt)
 
-                # 7. Сохранение/Обновление саммари
+                # Сохранение/Обновление саммари
                 if summary:
                     if not save_or_update_summary(connection, channel_id, target_date, summary, LLM_MODEL_NAME):
                         logger.error("Не удалось сохранить саммари в БД.")
@@ -335,7 +330,6 @@ def main():
                 else:
                     logger.error("Не удалось получить саммари от LLM. Саммари за день не будет обновлено/создано.")
                     # Если LLM не вернул саммари, но посты были, это может быть ошибкой
-                    # или временной проблемой LLM. Можно создать запись "Саммари не сгенерировано".
                     if not save_or_update_summary(connection, channel_id, target_date, "Саммари не удалось сгенерировать.", "SystemError"):
                          logger.error("Не удалось сохранить информацию об ошибке генерации саммари.")
                     exit_code = 1 # Считаем это ошибкой задачи
@@ -358,10 +352,6 @@ def main():
         sys.exit(exit_code)
 
 if __name__ == "__main__":
-    # Этот блок для локального тестирования.
-    # Для теста нужно установить переменную окружения XCOM_DATA_JSON, например:
-    # export XCOM_DATA_JSON='{"channel_id": 1137503644, "target_date_str": "2024-05-18", "status": "success", "parsed_count": 10, "saved_count": 10}'
-    # и остальные переменные (DB_*, GIGACHAT_API_KEY)
     final_exit_code = 0
     try:
         logger.info("Запуск основного процесса суммризатора (локальный или прямой вызов)...")

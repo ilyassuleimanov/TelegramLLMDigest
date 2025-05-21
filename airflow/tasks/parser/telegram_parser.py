@@ -1,26 +1,24 @@
 import asyncio
 import datetime
-from datetime import date, time, timedelta, timezone # Убедимся, что все компоненты datetime импортированы
+from datetime import date, time, timedelta, timezone
 import os
 import sys
 import json
-import time as sync_time # Переименуем, чтобы не конфликтовать с datetime.time
+import time as sync_time
 import logging
-# urllib.parse не используется напрямую в этом скрипте, можно удалить, если не нужен для get_channel_username
-# from urllib.parse import urlparse
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2 import OperationalError
-from psycopg2.extras import Json # <--- ДОБАВЛЯЕМ ИМПОРТ Json
-from typing import Optional, List, Tuple, Dict, Any # Убрал Union, так как Optional[X] = Union[X, None]
+from psycopg2.extras import Json
+from typing import Optional, List, Tuple, Dict, Any
 
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError, FloodWaitError, AuthKeyError, UserDeactivatedBanError, UsernameNotOccupiedError, ChannelPrivateError
 from telethon.tl.types import Channel
 
-import base64 # Для преобразования bytes в строку, если нужно сохранить содержимое
+import base64 # Для преобразования bytes в строку, когда нужно сохранить содержимое
 
-# --- Настройка Логгирования ---
+# Настройка Логгирования
 logging.basicConfig(
     level=logging.INFO, 
     format='[%(asctime)s] [%(levelname)s] [Parser] - %(message)s',
@@ -28,10 +26,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# --- ЗАГРУЗКА ПЕРЕМЕННЫХ ОКРУЖЕНИЯ ---
+# Загрузка и чление переменных окружения
 load_dotenv()
 
-# --- ЧТЕНИЕ НАСТРОЕК ИЗ ОКРУЖЕНИЯ ---
 TELEGRAM_API_ID = os.getenv('TELEGRAM_API_ID')
 TELEGRAM_API_HASH = os.getenv('TELEGRAM_API_HASH')
 TELEGRAM_PHONE = os.getenv('TELEGRAM_PHONE')
@@ -48,7 +45,7 @@ PARSER_CHANNEL_ID_AS_STR = os.getenv('PARSER_CHANNEL_ID')
 PARSER_TARGET_DATE_STR = os.getenv('PARSER_TARGET_DATE')
 XCOM_PATH = "/airflow/xcom/return.json"
 
-# --- Валидация обязательных переменных ---
+# Валидация обязательных переменных
 REQUIRED_VARS_AIRFLOW = {
     'TELEGRAM_API_ID': TELEGRAM_API_ID,
     'TELEGRAM_API_HASH': TELEGRAM_API_HASH,
@@ -65,7 +62,7 @@ if missing_vars:
     logger.error(f"Ошибка: Отсутствуют обязательные переменные окружения: {', '.join(missing_vars)}")
     sys.exit(1)
 
-# --- Преобразование и проверка типов входных параметров ---
+# Преобразование и проверка типов входных параметров
 try:
     channel_id_for_db_and_xcom = int(PARSER_CHANNEL_ID_AS_STR)
 except (ValueError, TypeError):
@@ -79,8 +76,7 @@ except ValueError:
 
 telegram_client: Optional[TelegramClient] = None
 
-# --- Функции ---
-
+# Функции
 def connect_db(retry_count: int = 5, delay: int = 5) -> Optional[psycopg2.extensions.connection]:
     conn: Optional[psycopg2.extensions.connection] = None
     for attempt in range(1, retry_count + 1):
@@ -192,7 +188,7 @@ def convert_to_json_serializable(item: Any) -> Any:
             return item.decode('utf-8')
         except UnicodeDecodeError:
             logger.debug(f"Не удалось декодировать bytes (длина: {len(item)}) как UTF-8, используется base64.")
-            return base64.b64encode(item).decode('ascii') # base64 всегда возвращает ascii-совместимую строку
+            return base64.b64encode(item).decode('ascii')
     return item
 
 async def parse_channel_for_day(channel_identifier_for_telethon: str, target_date_to_parse: date) -> Tuple[Optional[List[Dict[str, Any]]], Optional[int]]:
@@ -271,7 +267,7 @@ async def save_messages_to_db(conn: psycopg2.extensions.connection, messages_lis
                 serializable_raw_data = convert_to_json_serializable(db_insert_data.get('raw_data', {}))
                 db_insert_data['raw_data'] = Json(serializable_raw_data) # Используем psycopg2.extras.Json
 
-                # Логирование данных перед вставкой (без слишком больших полей)
+                # Логирование данных перед вставкой
                 log_data = {k: v for k,v in db_insert_data.items() if k != 'raw_data'}
                 log_data['raw_data_type'] = type(db_insert_data['raw_data']).__name__
                 logger.debug(f"Данные для вставки (ID: {db_insert_data.get('message_id')}): {log_data}")
@@ -282,10 +278,6 @@ async def save_messages_to_db(conn: psycopg2.extensions.connection, messages_lis
                 except psycopg2.DatabaseError as db_err:
                     logger.error(f"Ошибка БД при вставке сообщения ID={msg_data.get('message_id')}: {db_err}", exc_info=True)
                     skipped_count += 1
-                    # Решаем, откатывать ли всю пачку или только эту вставку.
-                    # Для идемпотентности лучше всю пачку, если одна ошибка критична.
-                    # Если допустимо частичное сохранение, то можно conn.rollback() здесь и continue.
-                    # Сейчас, если ошибка, вся транзакция будет отменена в общем except.
                     raise # Перевыбрасываем, чтобы откатить всю транзакцию
                 except Exception as e:
                      logger.error(f"Неожиданная ошибка при подготовке/вставке сообщения ID={msg_data.get('message_id')}: {e}", exc_info=True)
@@ -305,7 +297,7 @@ def write_xcom_data(data: Dict[str, Any]) -> bool:
     logger.info(f"Запись данных XCom в файл: {XCOM_PATH}")
     try:
         xcom_dir = os.path.dirname(XCOM_PATH)
-        if xcom_dir and not os.path.exists(xcom_dir): # Проверка, что xcom_dir не пустой (если XCOM_PATH это просто имя файла)
+        if xcom_dir and not os.path.exists(xcom_dir): # Проверка, что xcom_dir не пустой
             os.makedirs(xcom_dir, exist_ok=True)
             logger.info(f"Создана директория для XCom: {xcom_dir}")
         with open(XCOM_PATH, 'w', encoding='utf-8') as f:
@@ -321,8 +313,8 @@ async def main():
     db_connection: Optional[psycopg2.extensions.connection] = None
     exit_code = 0 # Успех по умолчанию
     parsed_messages_count = 0
-    saved_count = 0 # Инициализируем
-    skipped_count = 0 # Инициализируем
+    saved_count = 0
+    skipped_count = 0
     actual_channel_id_from_telethon: Optional[int] = None
     xcom_status = "failure" # Статус по умолчанию для XCom, если что-то пойдет не так до его явной установки
     error_message_for_xcom = "Неизвестная ошибка"
@@ -331,7 +323,6 @@ async def main():
 
     try:
         logger.info("--- Запуск скрипта парсера (Airflow Task) ---")
-        # ... (чтение env, подключение к БД, инициализация Telegram - как было) ...
         db_connection = connect_db()
         if not db_connection:
             raise Exception("Не удалось подключиться к базе данных.")
@@ -349,15 +340,12 @@ async def main():
         if parsed_messages is None or actual_channel_id_from_telethon is None:
              raise Exception(f"Ошибка парсинга канала '{PARSER_CHANNEL_IDENTIFIER}'.")
 
-        # Проверка ID (оставляем)
+        # Проверка ID
         if actual_channel_id_from_telethon != channel_id_for_db_and_xcom:
             logger.warning(f"ID канала из конфига DAG ({channel_id_for_db_and_xcom}) "
                            f"не совпадает с ID от Telegram ({actual_channel_id_from_telethon}). "
                            f"В БД будет записан ID от Telegram: {actual_channel_id_from_telethon}. "
                            f"Для XCom будет использован ID из конфига DAG: {channel_id_for_db_and_xcom}.")
-            # Тут нужно решить, какой ID использовать. Если мы хотим фильтровать по ID из конфига,
-            # то нужно убедиться, что он правильный.
-            # Для записи в telegram_messages.channel_id всегда используем actual_channel_id_from_telethon.
 
         parsed_messages_count = len(parsed_messages)
         logger.info(f"Успешно получено {parsed_messages_count} сообщений из Telegram.")
@@ -366,20 +354,15 @@ async def main():
             saved_count, skipped_count = await save_messages_to_db(db_connection, parsed_messages)
             logger.info(f"Результаты сохранения в БД: {saved_count} новых, {skipped_count} пропущено (дубликаты/ошибки).")
 
-            # Проверяем, были ли ошибки именно при ВСТАВКЕ (если save_messages_to_db перебрасывает исключение при ошибке)
+            # Проверяем, были ли ошибки именно при вставке (если save_messages_to_db перебрасывает исключение при ошибке)
             # Если saved_count == 0 и skipped_count == parsed_messages_count, И при этом save_messages_to_db
-            # НЕ выбросила исключение, то это означает, что все были дубликаты.
+            # не выбросила исключение, то это означает, что все были дубликаты.
             # Если же save_messages_to_db выбросит исключение, мы его поймаем в общем блоке except.
             if saved_count == 0 and skipped_count == parsed_messages_count and parsed_messages_count > 0:
                 logger.info("Все полученные сообщения уже существуют в БД (или были пропущены без ошибок вставки).")
                 xcom_status = "success_duplicates_found" # Новый статус для XCom
             elif saved_count > 0 or (parsed_messages_count > 0 and skipped_count < parsed_messages_count) :
                 xcom_status = "success" # Были сохранены новые или часть была дубликатами, но не все
-            # else: # saved_count == 0, parsed_messages_count > 0, skipped_count < parsed_messages_count - это странно, означает ошибки
-            #   logger.error("Не удалось сохранить часть сообщений, но не было выброшено исключение из save_messages_to_db. Проверьте логи save_messages_to_db.")
-            #   xcom_status = "partial_failure" # Или просто "failure"
-            #   exit_code = 1
-            #   error_message_for_xcom = "Частичная ошибка сохранения сообщений."
 
 
         else: # parsed_messages_count == 0
@@ -437,7 +420,7 @@ async def main():
         }
         actual_xcom_written = write_xcom_data(xcom_output) # Записываем XCom
 
-        # Закрываем соединения ПОСЛЕ записи XCom
+        # Закрываем соединения после записи XCom
         if telegram_client and telegram_client.is_connected():
             logger.info("Отключение от Telegram...")
             try:
@@ -453,12 +436,10 @@ async def main():
             except Exception as close_err:
                 logger.error(f"Ошибка при закрытии соединения с БД: {close_err}")
 
-        # Логируем САМЫМ ПОСЛЕДНИМ перед выходом
+        # Логируем перед выходом
         logger.info(f"--- Скрипт парсера завершен с кодом выхода: {exit_code} (XCom записан: {actual_xcom_written}) ---")
         sys.exit(exit_code)
 
-# Блок if __name__ == "__main__": остается как был,
-# он должен корректно передавать exit_code из main.
 if __name__ == "__main__":
     final_exit_code = 0
     try:
@@ -467,25 +448,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
          logger.warning("Программа прервана пользователем (Ctrl+C).")
          final_exit_code = 130
-         sys.exit(final_exit_code) # Явный выход
+         sys.exit(final_exit_code)
     except SystemExit as e:
          logger.info(f"Перехвачен SystemExit с кодом {e.code}. Завершение (из __main__).")
          final_exit_code = e.code if isinstance(e.code, int) else 1
-         # Не вызываем sys.exit() здесь снова, если он уже был вызван
     except Exception as e:
          logger.critical(f"Неперехваченная ошибка на самом верхнем уровне: {e}", exc_info=True)
          final_exit_code = 1
-         sys.exit(final_exit_code) # Явный выход
-    # finally: # Этот finally может быть избыточным, если main() или except выше уже сделали sys.exit()
-    #     logger.info(f"Скрипт парсера окончательно завершается с кодом {final_exit_code} (из __main__ блока).")
-    #     # Убедимся, что процесс завершается с правильным кодом
-    #     # Это может быть нужно, если asyncio.run(main()) "проглотил" sys.exit из main
-    #     if 'final_exit_code' not in locals() or (isinstance(sys.last_value, SystemExit) and sys.last_value.code != final_exit_code) :
-    #          if isinstance(sys.last_value, SystemExit):
-    #              final_exit_code = sys.last_value.code if isinstance(sys.last_value.code, int) else 1
-    #          elif final_exit_code == 0 and sys.exc_info()[0] is not None : # Если было исключение, но final_exit_code не установлен
-    #              final_exit_code = 1
-
-    #     # Этот sys.exit может конфликтовать с sys.exit в main->finally
-    #     # Уберем его, полагаясь на sys.exit в main->finally
-    #     # sys.exit(final_exit_code)
+         sys.exit(final_exit_code)

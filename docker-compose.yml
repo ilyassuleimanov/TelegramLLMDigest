@@ -1,12 +1,12 @@
-version: '3.8' # Эта строка опциональна для современных версий Docker Compose
+version: '3.8'
 
 services:
-  # --- База Данных для Результатов Работы Пайплайна ---
+  # БД для результатов работы пайплайна. Для постов и их саммари
   postgres_results_db_service: 
     image: postgres:15
     container_name: postgres_results_db_service
     environment:
-      POSTGRES_DB: ${DB_NAME}       # Для постов и саммари
+      POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
@@ -22,9 +22,9 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # === Сервисы Apache Airflow ===
+  # Сервисы Airflow
 
-  # --- База Данных для Метаданных Airflow ---
+  # БД для метаданных Airflow
   postgres_airflow_db:
     image: postgres:15
     container_name: postgres_airflow_db_service
@@ -35,7 +35,7 @@ services:
     volumes:
       - postgres_airflow_data:/var/lib/postgresql/data
     ports:
-      - "${AIRFLOW_DB_PORT_ON_HOST}:5432" # Порт для Airflow БД, если нужен внешний доступ
+      - "${AIRFLOW_DB_PORT_ON_HOST}:5432" # Порт для Airflow БД
     networks:
       - app-network
     healthcheck:
@@ -45,11 +45,11 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # --- Инициализация Airflow (Запускается один раз для создания/миграции БД и пользователя) ---
+  # Инициализация Airflow (Запускается один раз для создания/миграции БД и пользователя)
   # Этот сервис выполняет 'airflow db migrate' и 'airflow users create'
-  # Он должен запускаться ПЕРЕД scheduler и webserver
+  # Он должен запускаться перед scheduler и webserver
   airflow-init:
-    image: apache/airflow:${AIRFLOW_IMAGE_TAG} # Используй актуальную версию
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG}
     container_name: airflow_init_service
     depends_on:
       postgres_airflow_db:
@@ -82,26 +82,24 @@ services:
       - airflow_init_flag_volume:/opt/airflow 
     networks:
       - app-network
-    # Этот сервис не должен перезапускаться, он выполняет задачу и выходит
-    # restart: "no" # Docker Compose v2.1+ или можно просто не указывать
 
-  # --- Airflow Scheduler ---
+  # Airflow Scheduler
   airflow-scheduler:
-    image: apache/airflow:${AIRFLOW_IMAGE_TAG} # Убедись, что версия та же, что и у init/webserver
+    image: apache/airflow:${AIRFLOW_IMAGE_TAG}
     container_name: airflow_scheduler_service
     depends_on:
       airflow-init: # Ждет завершения инициализации
         condition: service_completed_successfully # Для сервисов, которые должны завершиться
-      postgres_airflow_db: # Также явно зависит от БД
+      postgres_airflow_db: # Также зависит от БД
         condition: service_healthy
     env_file:
       - .env
-    user: "${AIRFLOW_UID}:0" # UID:GID, GID 0 = root
+    user: "${AIRFLOW_UID}:0" # UID:GID
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
-      - ./config:/opt/airflow/config # <-- Монтируем папку config
+      - ./config:/opt/airflow/config # Монтируем папку config
       # Монтируем Docker socket для DockerOperator
       - /var/run/docker.sock:/var/run/docker.sock
     command: scheduler
@@ -114,12 +112,12 @@ services:
       timeout: 30s
       retries: 5
 
-  # --- Airflow Webserver ---
+  # Airflow Webserver
   airflow-webserver:
     image: apache/airflow:${AIRFLOW_IMAGE_TAG}
     container_name: airflow_webserver_service
     depends_on:
-      airflow-scheduler: # Ждет, пока планировщик будет здоров
+      airflow-scheduler: # Ждет, пока планировщик будет healthy
         condition: service_healthy
     env_file:
       - .env
@@ -129,7 +127,7 @@ services:
       - ./airflow/logs:/opt/airflow/logs
       - ./airflow/plugins:/opt/airflow/plugins
       - ./config:/opt/airflow/config # <-- Монтируем папку config
-      # Монтируем Docker socket для DockerOperator (например, для теста задач из UI)
+      # Монтируем Docker socket для DockerOperator
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "${AIRFLOW_WEB_PORT:-8080}:8080" # Порт для UI Airflow
@@ -139,40 +137,37 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://localhost:8080/health"]
-      interval: 30s # Увеличено, так как веб-сервер может дольше стартовать
+      interval: 30s
       timeout: 10s
       retries: 5
 
-  # === API Сервис для Результатов ===
+  # API Сервис для Результатов
   fastapi_service:
     build:
       context: ./fastAPI_app # Путь к папке с Dockerfile и кодом FastAPI
       dockerfile: Dockerfile
-    container_name: fastapi_api_service # Даем понятное имя контейнеру
+    container_name: fastapi_api_service
     env_file:
       - .env # Подтягиваем все переменные из .env файла
     environment:
-      # Явно передаем переменные, которые main.py ожидает,
-      # используя значения из .env (Docker Compose автоматически их подставит)
-      # или напрямую задавая их, если они отличаются от тех, что в .env
-      CHANNELS_FILE_PATH: ${CHANNELS_FILE_PATH_IN_CONTAINER} # Путь ВНУТРИ контейнера FastAPI
-      DB_HOST: ${DB_HOST} # Имя сервиса БД результатов
-      DB_PORT: ${DB_PORT} # Внутренний порт контейнера PostgreSQL
-      DB_USER: ${DB_USER} # Используем те же, что для postgres_results_db_service
-      DB_PASSWORD: ${DB_PASSWORD} # Используем те же, что для postgres_results_db_service
-      DB_NAME: ${DB_NAME} # Используем те же, что для postgres_results_db_service
+      # Описания переменных в .env файле
+      CHANNELS_FILE_PATH: ${CHANNELS_FILE_PATH_IN_CONTAINER}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
     volumes:
       # Монтируем файл channels.json с хоста в контейнер
       - ${CHANNELS_CONFIG_FILE_ON_HOST}:${CHANNELS_FILE_PATH_IN_CONTAINER}:ro # ro = read-only
-      # Для разработки с --reload можно смонтировать весь код приложения
-      - ./fastAPI_app:/app # Код FastAPI монтируется в /app (где WORKDIR в Dockerfile)
+      - ./fastAPI_app:/app # Код FastAPI монтируется в WORKDIR из Dockerfile
     ports:
       - "${FASTAPI_PORT_ON_HOST:-8000}:8000" # Пробрасываем порт FastAPI на хост
     networks:
-      - app-network # Используем ту же сеть, что и другие сервисы
+      - app-network
     depends_on:
-      postgres_results_db_service: # FastAPI зависит от базы данных результатов
-        condition: service_healthy # Ждет, пока БД будет готова
+      postgres_results_db_service:
+        condition: service_healthy # Ждет, пока БД будет healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "curl --fail http://localhost:8000/docs || exit 1"] # Проверяем доступность Swagger UI
@@ -187,20 +182,15 @@ services:
     container_name: streamlit_ui_service
     env_file:
       - .env # Подтягиваем переменные из .env
-    # Переменная окружения, указывающая на URL FastAPI сервиса
-    # Это значение должно быть определено в вашем .env файле
-    # Например: FASTAPI_BASE_URL=http://fastapi_api_service:8000
     environment:
       FASTAPI_BASE_URL: ${FASTAPI_BASE_URL}
-      # Если Streamlit нужны еще какие-то переменные, добавьте их сюда
     ports:
       - "${STREAMLIT_PORT_ON_HOST}:8501" # Пробрасываем порт Streamlit на хост
     networks:
-      - app-network # Используем ту же сеть
+      - app-network
     depends_on:
-      fastapi_service: # Streamlit зависит от FastAPI сервиса
-        condition: service_healthy # Ждет, пока FastAPI будет готов (если у FastAPI есть healthcheck)
-                                   # или service_started, если healthcheck'а нет, но это менее надежно
+      fastapi_service:
+        condition: service_healthy # Ждет, пока FastAPI будет healthy
     restart: unless-stopped
 
 volumes:
@@ -211,4 +201,4 @@ volumes:
 networks:
   app-network:
     driver: bridge
-    name: mlops_project_app_net # Явно задаем имя сети для предсказуемости
+    name: mlops_project_app_net # Явно задаем имя сети

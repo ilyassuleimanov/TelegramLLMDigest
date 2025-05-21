@@ -2,12 +2,11 @@ import streamlit as st
 import requests
 import os
 from datetime import datetime
-# import pandas as pd # Пока не используется, можно закомментировать или удалить
 
 # --- Начальная Настройка ---
 
 # Получаем базовый URL FastAPI сервиса из переменной окружения
-FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://localhost:8000") # Дефолт для локального теста
+FASTAPI_BASE_URL = os.getenv("FASTAPI_BASE_URL", "http://localhost:8000")
 
 # URL эндпоинтов
 CHANNELS_URL = f"{FASTAPI_BASE_URL}/channels"
@@ -24,7 +23,7 @@ st.set_page_config(
 st.title("📰 Анализатор Telegram Каналов")
 st.markdown("Просматривайте саммари и посты из отслеживаемых Telegram каналов.")
 
-# --- Функции для Взаимодействия с API (с кэшированием) ---
+# Функции для Взаимодействия с API (с кэшированием)
 
 @st.cache_data(ttl=3600) # Кэшируем на 1 час
 def get_channels():
@@ -89,18 +88,18 @@ def get_posts(channel_id: int, date_str: str):
         st.error(f"Произошла неожиданная ошибка при обработке постов: {e}")
         return []
 
-# --- Инициализация Session State ---
+# Инициализация Session State
 if 'selected_channel_id' not in st.session_state:
     st.session_state.selected_channel_id = None
-if 'selected_summary_date_str' not in st.session_state: # Для управления раскрытием expander'а
+if 'selected_summary_date_str' not in st.session_state: # Для управления раскрытием экспандера
     st.session_state.selected_summary_date_str = None
 if 'posts_to_display_info' not in st.session_state: # Словарь {'channel_id': id, 'date_str': date} или None
     st.session_state.posts_to_display_info = None
 
 
-# --- Основная Логика Приложения ---
+# Основная логика
 
-# Шаг 1: Загрузка и Отображение Каналов
+# Шаг 1: Загрузка и отображение каналов
 channels_data = get_channels()
 channel_map_name_to_id = {}
 channel_map_id_to_name = {}
@@ -112,12 +111,12 @@ if channels_data:
     
     options = ["Выберите канал..."] + list(channel_map_name_to_id.keys())
     
-    default_index = 0 # Индекс для "Выберите канал..."
+    default_index = 0
     if st.session_state.selected_channel_id and st.session_state.selected_channel_id in channel_map_id_to_name:
         try:
             default_index = options.index(channel_map_id_to_name[st.session_state.selected_channel_id])
         except ValueError:
-            pass # Если имя не найдено, останется "Выберите канал..."
+            pass # Если имя не найдено, останется Выберите канал
     
     selected_channel_name = st.sidebar.selectbox(
         "Выберите канал:",
@@ -131,11 +130,9 @@ if channels_data:
         if st.session_state.selected_channel_id != new_selected_channel_id:
             st.session_state.posts_to_display_info = None
             st.session_state.selected_summary_date_str = None
-            # st.rerun() # Можно вызвать, если нужно немедленное обновление,
-                       # но обычно Streamlit сам перерисовывает при изменении виджета
         st.session_state.selected_channel_id = new_selected_channel_id
     else:
-        if st.session_state.selected_channel_id is not None: # Если был выбран канал, а теперь "Выберите..."
+        if st.session_state.selected_channel_id is not None: # Если был выбран канал, а теперь Выберите
             st.session_state.selected_channel_id = None
             st.session_state.posts_to_display_info = None
             st.session_state.selected_summary_date_str = None
@@ -161,12 +158,12 @@ if st.session_state.selected_channel_id:
 
     if summaries:
         for summary in summaries:
-            summary_date_obj = summary["summary_date"] # Должен быть уже datetime.date
+            summary_date_obj = summary["summary_date"] # тип datetime.date
             date_str_iso = summary_date_obj.isoformat()
             date_str_formatted = summary_date_obj.strftime("%d %B %Y")
             
-            # Раскрываем expander, если его дата совпадает с selected_summary_date_str
-            # и если сейчас не отображаются посты (или если отображаются посты для ДРУГОЙ даты)
+            # Раскрываем экспандер, если его дата совпадает с selected_summary_date_str
+            # и если сейчас не отображаются посты или отображаются для другой даты
             is_expanded = (st.session_state.selected_summary_date_str == date_str_iso) and \
                           (not st.session_state.posts_to_display_info or \
                            st.session_state.posts_to_display_info.get("date_str") != date_str_iso)
@@ -198,7 +195,7 @@ if st.session_state.posts_to_display_info:
 
     # Показываем посты только если они для текущего выбранного канала
     if channel_id_for_posts == st.session_state.selected_channel_id:
-        with posts_placeholder.container(): # Используем .container() на placeholder
+        with posts_placeholder.container(): # Используем .container() на плейсхолдер
             current_channel_name_for_posts = channel_map_id_to_name.get(channel_id_for_posts, "Неизвестный канал")
             formatted_date_for_header = datetime.fromisoformat(date_str_for_posts).strftime('%d %B %Y')
             
@@ -209,7 +206,7 @@ if st.session_state.posts_to_display_info:
 
             if posts:
                 for post in posts:
-                    post_date_obj = post["message_date"] # Должен быть уже datetime.datetime
+                    post_date_obj = post["message_date"] # тип datetime.datetime
                     st.markdown(f"---")
                     st.caption(f"Опубликовано: {post_date_obj.strftime('%d.%m.%Y %H:%M:%S')}")
                     if post.get("text"):
@@ -222,15 +219,13 @@ if st.session_state.posts_to_display_info:
             
             if st.button("Скрыть посты / Назад к саммари", key="hide_posts_button_v3"):
                 st.session_state.posts_to_display_info = None
-                # selected_summary_date_str остается, чтобы expander был открыт
                 st.rerun()
     else:
-        # Если выбранный канал изменился, а posts_to_display_info еще от старого, очищаем
+        # Если выбранный канал изменился, а posts_to_display_info еще от старого, то очищаем
         st.session_state.posts_to_display_info = None
         posts_placeholder.empty() # Очищаем контейнер
-        # st.rerun() # Можно вызвать, чтобы немедленно убрать, но следующая отрисовка это сделает
 
 elif not st.session_state.selected_channel_id and not channels_data: # Если каналы не загружены
     pass # Сообщение об ошибке загрузки каналов уже есть
 elif not st.session_state.selected_channel_id and channels_data: # Если каналы загружены, но ни один не выбран
-    pass # Сообщение "Выберите канал..." уже есть
+    pass # Сообщение Выберите канал уже есть

@@ -14,10 +14,10 @@ from dotenv import load_dotenv
 # --- Настройка Логирования ---
 # Получаем уровень логирования из переменной окружения, по умолчанию INFO
 LOG_LEVEL_STR = os.getenv("LOG_LEVEL", "INFO").upper()
-LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO) # Преобразуем строку в уровень логирования
+LOG_LEVEL = getattr(logging, LOG_LEVEL_STR, logging.INFO)
 
 # Создаем и настраиваем логгер
-logger = logging.getLogger("fastapi_app") # Даем имя логгеру
+logger = logging.getLogger("fastapi_app")
 logger.setLevel(LOG_LEVEL)
 
 # Создаем обработчик для вывода логов в stdout (консоль)
@@ -33,13 +33,13 @@ handler.setFormatter(formatter)
 if not logger.handlers:
     logger.addHandler(handler)
 
-# --- Загрузка переменных окружения ---
+# Загрузка переменных окружения
 load_dotenv()
 logger.info("Переменные окружения загружены (если .env файл существует).")
 
-# --- Конфигурация ---
+# Конфигурация
 DB_HOST = os.getenv("DB_HOST")
-DB_PORT_STR = os.getenv("DB_PORT", "5432") # Порт по умолчанию, если не задан
+DB_PORT_STR = os.getenv("DB_PORT", "5432")
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
@@ -50,7 +50,7 @@ logger.info(f"DB_HOST: {DB_HOST}, DB_PORT: {DB_PORT_STR}, DB_USER: {'SET' if DB_
 logger.info(f"CHANNELS_FILE_PATH_INTERNAL: {CHANNELS_FILE_PATH_INTERNAL}")
 
 
-# --- Pydantic Модели ---
+# Pydantic Модели
 class Channel(BaseModel):
     id: int
     telegram_identifier: str
@@ -79,7 +79,7 @@ class TelegramMessage(BaseModel):
     has_media: Optional[bool] = None
     parsed_at: datetime
 
-# --- База данных ---
+# База данных
 async def get_db_pool():
     if not hasattr(get_db_pool, "pool"):
         if not all([DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT_STR]):
@@ -115,7 +115,7 @@ async def get_db_pool():
             raise RuntimeError(error_msg)
     return get_db_pool.pool
 
-# --- FastAPI Приложение ---
+# FastAPI Приложение
 app = FastAPI(
     title="Telegram Channel Summaries API",
     description="API for accessing parsed Telegram posts and their summaries.",
@@ -129,9 +129,6 @@ async def startup_event():
         await get_db_pool() # Инициализируем пул при старте
     except RuntimeError as e:
         logger.critical(f"Критическая ошибка при создании пула БД на старте: {e}. Приложение может не работать корректно.")
-        # Можно решить, останавливать ли приложение здесь
-        # import sys
-        # sys.exit(1)
     logger.info("FastAPI приложение успешно запущено.")
 
 
@@ -144,7 +141,7 @@ async def shutdown_event():
     logger.info("FastAPI приложение успешно остановлено.")
 
 
-# --- Вспомогательные функции ---
+# Вспомогательные функции
 def load_channels_from_file() -> List[Channel]:
     logger.info(f"Попытка загрузки каналов из файла: {CHANNELS_FILE_PATH_INTERNAL}")
     try:
@@ -165,7 +162,7 @@ def load_channels_from_file() -> List[Channel]:
         logger.error(error_msg, exc_info=True)
         raise HTTPException(status_code=500, detail=error_msg)
 
-# --- Эндпоинты ---
+# Эндпоинты
 @app.get("/channels", response_model=List[Channel], tags=["Channels"])
 async def get_channels_endpoint():
     logger.info("Запрос на эндпоинт /channels")
@@ -186,9 +183,6 @@ async def get_summaries_for_channel(channel_id: int, pool: asyncpg.Pool = Depend
         logger.info(f"Получено {len(rows)} саммари для канала {channel_id}")
         if rows:
             logger.info(f"Первая строка данных для summaries: {dict(rows[0])}")
-            # Можно убрать детальное логирование каждой строки, если их много
-            # for i, row_item in enumerate(rows):
-            #     logger.info(f"Саммари, строка {i} данные: {dict(row_item)}")
         else:
             logger.info(f"Саммари для канала {channel_id} не найдены.")
         return [Summary(**row) for row in rows]
@@ -245,4 +239,4 @@ if __name__ == "__main__":
     import uvicorn
     logger.info("Запуск FastAPI приложения локально через uvicorn...")
     # Проверки переменных окружения и файла каналов уже происходят при инициализации и в get_db_pool
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level=LOG_LEVEL_STR.lower()) # передаем уровень логов в uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level=LOG_LEVEL_STR.lower())
