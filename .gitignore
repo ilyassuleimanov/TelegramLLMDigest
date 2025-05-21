@@ -6,3 +6,5 @@ my_telegram_session.session
 Notes.txt
 delete/
 parser_results/
+parser/
+summarizer/
